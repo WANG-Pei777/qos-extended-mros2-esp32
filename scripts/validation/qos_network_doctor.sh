@@ -17,7 +17,11 @@ ip -4 route || true
 if [ -n "${IFACE}" ]; then
   ip -4 addr show "${IFACE}" || true
 fi
-CONFIG_IP="$(grep -Eo 'REMOTE_PARTICIPANT_IP\{[0-9, ]+\}' "${PROJECT_ROOT}/platform/rtps/config.h" | head -1 | sed -E 's/.*\{([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+)\}/\1.\2.\3.\4/' || true)"
+CONFIG_SOURCE="${PROJECT_ROOT}/platform/rtps/config.h"
+if [ -f "${PROJECT_ROOT}/platform/rtps/config_local.h" ]; then
+  CONFIG_SOURCE="${PROJECT_ROOT}/platform/rtps/config_local.h"
+fi
+CONFIG_IP="$(grep -Eo 'REMOTE_PARTICIPANT_IP\{[0-9, ]+\}' "${CONFIG_SOURCE}" | head -1 | sed -E 's/.*\{([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+)\}/\1.\2.\3.\4/' || true)"
 echo "WSL IPv4 for ROS2: ${WSL_IPV4:-unknown}"
 echo "Firmware REMOTE_PARTICIPANT_IP: ${CONFIG_IP:-unknown}"
 if [ -n "${WSL_IPV4}" ] && [ -n "${CONFIG_IP}" ] && [ "${WSL_IPV4}" != "${CONFIG_IP}" ]; then

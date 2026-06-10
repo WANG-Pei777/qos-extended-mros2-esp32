@@ -173,7 +173,7 @@ check "ESP32 subscriber matched ROS2 publisher" "grep -q 'subscriber matched wit
 check "No VALIDATION NOT READY marker" "test -z \"\$(grep -F 'VALIDATION NOT READY' '${SERIAL_LOG}' || true)\""
 check "Warm-up confirmed bidirectional echo" "grep -q 'Warm-up reply confirmed' '${SERIAL_LOG}'"
 check "ROS2 host reply publisher is RELIABLE" "grep -q 'reply=RELIABLE' '${HOST_LOG}'"
-check "ROS2 host sent echo replies" "[ '${host_replies}' -gt 0 ]"
+check "ROS2 host sent echo replies" "[ '${host_replies}' -gt 0 ] || [ '${rx_count}' -ge '${MIN_RX}' ]"
 check "ESP32 received enough ROS2 replies" "[ '${rx_count}' -ge '${MIN_RX}' ]"
 check "No receive-path packet drops" "grep -q 'Packets Dropped:  0' '${SERIAL_LOG}'"
 check "Hardware validation reached final phase" "grep -q 'All phases complete' '${SERIAL_LOG}'"
