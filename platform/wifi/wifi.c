@@ -21,6 +21,8 @@
 static EventGroupHandle_t s_wifi_event_group;
 static const char *TAG = "wifi station";
 static int s_retry_num = 0;
+/* Set once the first IP is obtained; from then on, reconnect forever. */
+static bool s_connected_once = false;
 
 /* keep IP address obtained in event_handler */
 static uint32_t mros2_ip_addr;
@@ -55,23 +57,38 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 #endif
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        if (s_retry_num < ESP_MAXIMUM_RETRY)
+        wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+        if (s_connected_once)
+        {
+            /* An established link must self-heal: without this the node goes
+             * permanently dark after any AP hiccup (observed on hardware:
+             * the board stopped answering ARP and sending SPDP after idling).
+             * Reconnect attempts are naturally rate-limited by the connect
+             * timeout, so no explicit backoff is needed. */
+            ESP_LOGW(TAG, "wifi disconnected (reason=%d), reconnecting...", event->reason);
+            esp_wifi_connect();
+        }
+        else if (s_retry_num < ESP_MAXIMUM_RETRY)
         {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
+            ESP_LOGI(TAG, "retry to connect to the AP (%d/%d)", s_retry_num, ESP_MAXIMUM_RETRY);
         }
         else
         {
+            /* Initial connect failed: give up so the app can report it
+             * (likely wrong credentials or AP out of range). */
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+            ESP_LOGE(TAG, "connect to the AP failed after %d retries (reason=%d)",
+                     ESP_MAXIMUM_RETRY, event->reason);
         }
-        ESP_LOGI(TAG, "connect to the AP fail");
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
+        s_connected_once = true;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         
         /* keep IP address obtained in event_handler */
@@ -115,6 +132,12 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    /* Disable modem power save. The default WIFI_PS_MIN_MODEM sleeps between
+     * DTIM beacons, which for this always-on DDS node caused multi-hundred-ms
+     * RTT spikes, dropped unicast (ping loss), and eventual disassociation
+     * while idle. This node is USB-powered; reliability and latency win. */
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 

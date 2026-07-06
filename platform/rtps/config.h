@@ -95,9 +95,12 @@ const uint8_t SPDP_WRITER_PRIO = 24;
 const uint8_t SPDP_MAX_NUMBER_FOUND_PARTICIPANTS = 5;
 const uint8_t SPDP_MAX_NUM_LOCATORS = 5;
 const Duration_t SPDP_DEFAULT_REMOTE_LEASE_DURATION = {
-    100, 0
-}; // Default lease duration for remote participants, usually
-// overwritten by remote info
+    12, 0
+}; // Doubles as (a) the lease duration THIS node announces in its SPDP
+// DATA(p) (see SPDPAgent) and (b) the fallback for remotes that omit one.
+// Keep it short-but-safe: 12 s = 12 announcements at SPDP_RESEND_PERIOD_MS
+// = 1000, so peers drop a rebooted node's ghost within ~12 s instead of
+// holding stale reliable-stream state for 100 s.
 const Duration_t SPDP_MAX_REMOTE_LEASE_DURATION = {
     180,
     0

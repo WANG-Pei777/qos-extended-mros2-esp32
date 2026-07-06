@@ -25,6 +25,9 @@ Author: i11 - Embedded Software, RWTH Aachen University
 #include "rtps/entities/Domain.h"
 #include "rtps/utils/Log.h"
 #include "rtps/utils/udpUtils.h"
+#ifdef ESP_PLATFORM
+#include "esp_random.h"
+#endif
 
 #if DOMAIN_VERBOSE && RTPS_GLOBAL_VERBOSE
 #define DOMAIN_LOG(...)                                                        \
@@ -482,15 +485,28 @@ rtps::Reader *Domain::createReader(Participant &part, const char *topicName,
 
 rtps::GuidPrefix_t Domain::generateGuidPrefix(ParticipantId_t id) const {
   GuidPrefix_t prefix = Config::BASE_GUID_PREFIX;
+#if defined(ESP_PLATFORM)
+  // Hardware RNG. srand(xTaskGetTickCount()) is NOT sufficient here: the boot
+  // sequence is so deterministic that the tick seed repeats across boots, so a
+  // rebooted node can draw the identical "random" prefix. A remote participant
+  // that still holds reliable-stream state for that GUID (its SPDP lease has
+  // not expired) then treats the reborn node's ACKNACKs as stale duplicates and
+  // never re-serves SEDP data -> endpoint matching deadlocks until the lease
+  // expires. Observed on hardware; see results/wireshark/RTPS_PARAMETER_EXPERIMENT.md.
+  for (size_t i = 0; i < prefix.id.size(); i++) {
+    prefix.id[i] = static_cast<uint8_t>(esp_random());
+  }
+#else
 #if defined(unix) || defined(__unix__)
   srand(time(nullptr));
 #else
   unsigned int seed = (int)xTaskGetTickCount();
   srand(seed);
 #endif
-  for (auto i = 0; i < rtps::Config::BASE_GUID_PREFIX.id.size(); i++) {
+  for (size_t i = 0; i < prefix.id.size(); i++) {
     prefix.id[i] = (rand() % 256);
   }
+#endif
   prefix.id[prefix.id.size() - 1] = *reinterpret_cast<uint8_t *>(&id);
   return prefix;
 }
