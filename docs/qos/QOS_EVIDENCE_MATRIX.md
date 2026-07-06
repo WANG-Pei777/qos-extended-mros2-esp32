@@ -28,13 +28,26 @@ L0: Not implemented or not covered by current validation.
 
 | QoS policy | Current value in validation path | Maturity | Evidence | Accurate statement |
 | --- | --- | --- | --- | --- |
-| Reliability | ESP32 uplink `RELIABLE`; ROS2 reply `RELIABLE` | L3 for the current path | Bidirectional real-hardware TX/RX; `ros2 topic info --verbose`; strict preflight PASS; 3-run reset stress PASS | Both directions are configured as RELIABLE and exercised on real hardware. |
-| Durability | `VOLATILE` | L2 | QoS profile; ROS2 discovery shows `VOLATILE` | VOLATILE is configured and visible. Full TRANSIENT_LOCAL durability behavior is outside the current validation focus. |
+| Reliability | ESP32 uplink `RELIABLE`; ROS2 reply `RELIABLE` | L3 for the current path | Bidirectional real-hardware TX/RX; `ros2 topic info --verbose`; strict preflight PASS; 3-run reset stress PASS. 2026-06-14: verified with concurrency fix (atomic bool), input validation, and graceful shutdown. | Both directions are configured as RELIABLE and exercised on real hardware. |
+| Durability | `VOLATILE` on step7; `TRANSIENT_LOCAL` on step8 | L3 for current path | VOLATILE visible in ROS2 discovery. TRANSIENT_LOCAL late-joiner: ESP32 publishes 10 cached messages before subscriber joins; ROS2 subscriber receives `[CACHED]` messages via HEARTBEAT-triggered history delivery. Verified on real hardware 2026-06-12. | TRANSIENT_LOCAL late-joiner historical data delivery is implemented and verified. The StatefulWriter sends HEARTBEAT before cached DATA to announce available sequence numbers. |
 | History | `KEEP_LAST(5)` | L2 | ROS2 CLI exposes the History field but reports depth as UNKNOWN; ESP32 startup log; QoS profile; `History cache: 5/5 samples`; `History KEEP_LAST enforcement PASSED`; SEDP emits PID_HISTORY | Writer-side depth enforcement is implemented and verified. ROS2 CLI visibility alone is not enough to prove KEEP_LAST(5). |
 | Deadline | ESP32 app-level `100ms`; reply endpoint finite deadline | L2 | ESP32 `Deadline missed: YES`; ROS2 discovery on reply path; deadline counters advance by missed period | Deadline detection behavior is verified, but complete DDS deadline status/event interop is not product-grade yet. |
 | Lifespan | `2000ms` | L2 | ESP32 expired/fresh checks; ROS2 discovery on reply path | Current evidence is focused behavior testing and endpoint discovery, not exhaustive RTPS cache expiry coverage. |
-| Liveliness | `AUTOMATIC`, lease `3000ms` | L2 | ESP32 writer activity/lease log; ROS2 discovery shows `AUTOMATIC` | Automatic liveliness configuration and observed writer activity are present. Full liveliness lost/recovered event semantics need more work. |
+| Liveliness | `AUTOMATIC`, lease `3000ms` | L2+ | ESP32 writer activity/lease log; ROS2 discovery shows `AUTOMATIC`; liveliness lost/recovered state machine implemented with transition counters. | Automatic liveliness configuration, observed writer activity, and lost/recovered state transitions are implemented. Full manual liveliness semantics not yet complete. |
 | Resource Limits | `30 samples`, `12288 bytes` | L2 | ESP32 burst test: rejected count and resource stats; SEDP emits standard sample-count resource limit | Local resource limiting behavior is verified. `maxBytes` is ESP32-local and not a standard ROS2-visible resource-limit field. |
+
+## Security Hardening Evidence (2026-06-14)
+
+```
+Buffer overflow:     Fixed (strcpy → strncpy + null termination)
+Memory leak:         Fixed (new → static allocation)
+Integer overflow:    Fixed (duration overflow protection)
+Error handling:      Fixed (infinite loops → handle_fatal_error with restart)
+Input validation:    Fixed (RTPS packet size, nextPos overflow, submsg bounds)
+Concurrency:         Fixed (volatile bool → std::atomic<bool>)
+Graceful shutdown:   Implemented (mros2::shutdown() API)
+Static analysis:     cppcheck clean, CI pipeline added
+```
 
 ## Bidirectional Communication Evidence
 
@@ -42,10 +55,10 @@ Latest real-hardware evidence on 2026-06-10:
 
 ```text
 Strict full-RELIABLE preflight PASS:
-  /home/your-user/mros2/mros2-esp32/results/qos_preflight_20260610_022457
+  /home/your-user/mROS2-QoS/results/qos_preflight_20260610_022457
 
 Strict full-RELIABLE reset stress 3/3 PASS:
-  /home/your-user/mros2/mros2-esp32/results/qos_reset_stress_20260610_022750
+  /home/your-user/mROS2-QoS/results/qos_reset_stress_20260610_022750
 
 ROS2 topic info evidence:
   Reliability: ESP32->ROS2 RELIABLE and ROS2->ESP32 RELIABLE visible
@@ -90,9 +103,11 @@ Reader received count
 Reader accepted-before-match count
 Reader out-of-order drop count
 Reader unmatched-writer drop count
+Reader liveliness lost count
+Reader liveliness recovered count
 ```
 
-These counters are debugging evidence for discovery, ordering, and reset behavior. They help explain failures, but they are not themselves QoS policy proof.
+These counters are debugging evidence for discovery, ordering, reset behavior, and liveliness state transitions. They help explain failures, but they are not themselves QoS policy proof.
 
 ## Network Preconditions
 
