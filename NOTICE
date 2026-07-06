@@ -1,0 +1,40 @@
+mROS2-QoS
+Copyright notice and third-party license inventory
+
+This repository is licensed under the Apache License 2.0 (see LICENSE),
+following the upstream mROS-base/mros2 and mros2-esp32 projects.
+
+It vendors or derives from the following third-party components. Each
+component keeps its own license, reproduced in the respective source files
+or subdirectories:
+
+1. mros2 / mros2-esp32 (mROS-base organization)
+   Path: mros2/, cmsis-esp32/, platform/
+   License: Apache License 2.0
+
+2. embeddedRTPS (Chair of Embedded Software i11, RWTH Aachen University)
+   Path: mros2/embeddedRTPS/
+   License: MIT License
+
+3. Micro-CDR (eProsima)
+   Path: mros2/embeddedRTPS/thirdparty/Micro-CDR/
+   License: Apache License 2.0
+
+4. lwIP (Swedish Institute of Computer Science and contributors)
+   Path: mros2/embeddedRTPS/thirdparty/lwip/
+   License: BSD 3-Clause License
+
+5. CMSIS-RTOS2 API (Arm Limited)
+   Path: cmsis-esp32/include/cmsis_os2.h
+   License: Apache License 2.0
+
+6. Wi-Fi station glue derived from Espressif ESP-IDF examples
+   Path: platform/wifi/wifi.c, platform/wifi/wifi.h
+   License: Public Domain / CC0 (inherited from the ESP-IDF example)
+
+Build-time dependencies (not vendored): Espressif ESP-IDF (Apache-2.0),
+ROS 2 Humble and eProsima Fast DDS on the host side (Apache-2.0).
+
+Note for artifact distribution: docs/papers/ (published third-party PDFs)
+and results/ (raw packet captures containing local network identifiers)
+are intentionally kept out of version control.

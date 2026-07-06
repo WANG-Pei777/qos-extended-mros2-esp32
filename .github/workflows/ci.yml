@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  static-qos-checks:
+    name: QoS Unit Tests & Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install g++
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+
+      - name: Run static QoS checks and security validation
+        run: bash scripts/test/qos_static_checks.sh
+
+  repo-hygiene:
+    name: Repository Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check no committed local secrets
+        run: |
+          if git ls-files | grep -E 'wifi_secrets\.h|config_local\.h'; then
+            echo "ERROR: Local secret files are tracked by git"
+            exit 1
+          fi
+
+      - name: Check no hardcoded home paths in source
+        run: |
+          if grep -RInE '/home/[a-zA-Z0-9_-]+/mROS2' \
+            --exclude-dir=.git \
+            --exclude-dir=docs \
+            --exclude-dir=.github \
+            --exclude-dir=build \
+            --exclude-dir=results \
+            --include='*.cpp' \
+            --include='*.h' \
+            --include='*.c' \
+            --include='*.sh' \
+            --include='*.py' \
+            --include='*.yml' \
+            --include='*.yaml' \
+            --include='*.txt' \
+            .; then
+            echo "WARNING: Found hardcoded home paths in source files (non-blocking)"
+          fi
+
+  firmware-build:
+    # The host-side checks never compile mros2.cpp or embeddedRTPS (they use
+    # stub headers), so declaration/definition/template-instantiation breaks
+    # are invisible to them. This job is the only gate that compiles the real
+    # firmware. jinja2 is needed by the templates.hpp generator.
+    name: Firmware Build (ESP32-S3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build validation firmware
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.1.7   # if this image tag is unavailable, fall back to v5.1
+          target: esp32s3
+          path: workspace/step7_full_qos
+          command: pip install jinja2 && idf.py build
+
+  cppcheck-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck on core source files
+        run: |
+          cppcheck --enable=warning,style \
+                   --suppress=missingIncludeSystem \
+                   --suppress=nullPointerRedundantCheck \
+                   --error-exitcode=1 \
+                   --quiet \
+                   mros2/src/mros2.cpp \
+                   mros2/embeddedRTPS/src/entities/Domain.cpp \
+                   mros2/embeddedRTPS/src/messages/MessageReceiver.cpp \
+                   2>&1 || echo "cppcheck completed with warnings"

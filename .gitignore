@@ -68,6 +68,3 @@ htmlcov/
 
 # Claude project files
 .claude/
-
-# GitHub workflows artifacts
-.github/
