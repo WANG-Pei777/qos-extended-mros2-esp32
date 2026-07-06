@@ -259,4 +259,18 @@ bool StatefulReaderT<NetworkDriver>::checkDeadlineMissed() {
   return false;
 }
 
+template <class NetworkDriver>
+void StatefulReaderT<NetworkDriver>::checkLiveliness() {
+  if (m_livelinessLeaseMs == 0) return; // infinite lease, no transitions
+  bool alive = isWriterAlive();
+  if (m_lastAliveState && !alive) {
+    // Transition: alive → lost
+    ++m_livelinessLostCount;
+  } else if (!m_lastAliveState && alive) {
+    // Transition: lost → recovered
+    ++m_livelinessRecoveredCount;
+  }
+  m_lastAliveState = alive;
+}
+
 #undef SFR_VERBOSE

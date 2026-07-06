@@ -26,6 +26,7 @@ namespace mros2
 {
 
   void init(int argc, char *argv[]);
+  void shutdown();
 
 #ifdef __cplusplus
   extern "C"
@@ -50,12 +51,12 @@ namespace mros2
     // New API: accept the full QoSProfile structure.
     template <class T>
     Publisher create_publisher(
-        std::string topic_name,
+        const std::string& topic_name,
         const QoSProfile& qos);
 
     template <class T>
     Subscriber create_subscription(
-        std::string topic_name,
+        const std::string& topic_name,
         const QoSProfile& qos,
         void (*fp)(T *));
 
@@ -117,6 +118,9 @@ namespace mros2
   uint32_t subscriber_accepted_before_match_count();
   uint32_t subscriber_out_of_order_drop_count();
   uint32_t subscriber_unmatched_writer_drop_count();
+  uint32_t subscriber_liveliness_lost_count();
+  uint32_t subscriber_liveliness_recovered_count();
+  void subscriber_check_liveliness();
 
 #ifdef __MBED__
   int setIPAddrRTPS(std::array<uint8_t, 4> ipaddr);

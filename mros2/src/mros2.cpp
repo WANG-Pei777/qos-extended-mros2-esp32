@@ -1,6 +1,8 @@
 #include "mros2.h"
+#include "mros2/error_handler.h"
 
 #include <rtps/rtps.h>
+#include <atomic>
 
 #ifdef __MBED__
 #include "mbed.h"
@@ -13,14 +15,14 @@ namespace mros2
 {
 
   rtps::Domain *domain_ptr = NULL;
-  rtps::Participant *part_ptr = NULL; // TODO: detele this
+  rtps::Participant *part_ptr = NULL;
   rtps::Writer *pub_ptr = NULL;
   rtps::Reader *sub_ptr = NULL;
 
 #define SUB_MSG_SIZE 4 // addr size
   osMessageQueueId_t subscriber_msg_queue_id;
 
-  bool completeNodeInit = false;
+  std::atomic<bool> completeNodeInit{false};
   uint8_t endpointId = 0;
   uint32_t subCbArray[10];
 
@@ -30,16 +32,16 @@ namespace mros2
   /* Callback function to set the boolean to true upon a match */
   void setTrue(void *args)
   {
-    *static_cast<volatile bool *>(args) = true;
+    *static_cast<std::atomic<bool> *>(args) = true;
   }
 
-  bool subMatched = false;
-  bool pubMatched = false;
+  std::atomic<bool> subMatched{false};
+  std::atomic<bool> pubMatched{false};
 
   void pubMatch(void *args)
   {
     if (args != nullptr) {
-      *static_cast<volatile bool *>(args) = true;
+      *static_cast<std::atomic<bool> *>(args) = true;
     }
     MROS2_DEBUG("[MROS2LIB] publisher matched with remote subscriber");
   }
@@ -47,7 +49,7 @@ namespace mros2
   void subMatch(void *args)
   {
     if (args != nullptr) {
-      *static_cast<volatile bool *>(args) = true;
+      *static_cast<std::atomic<bool> *>(args) = true;
     }
     MROS2_DEBUG("[MROS2LIB] subscriber matched with remote publisher");
   }
@@ -87,7 +89,7 @@ namespace mros2
 
 #ifndef __MBED__
     MX_LWIP_Init();
-    MROS2_DEBUG("[MROS2LIB] Initilizing lwIP complete");
+    MROS2_DEBUG("[MROS2LIB] Initializing lwIP complete");
 #endif /* __MBED__ */
 
     static rtps::Domain domain;
@@ -108,7 +110,7 @@ namespace mros2
       osDelay(100);
     }
     domain.completeInit();
-    MROS2_DEBUG("[MROS2LIB] Initilizing Domain complete");
+    MROS2_DEBUG("[MROS2LIB] Initializing Domain complete");
 
     while (!subMatched && !pubMatched)
     {
@@ -122,6 +124,29 @@ namespace mros2
     {
       MROS2_ERROR("[MROS2LIB] ERROR: mros2_init() task terminate error %d", ret);
     }
+  }
+
+  void shutdown()
+  {
+    MROS2_DEBUG("[MROS2LIB] shutdown() called");
+
+    // 1. Reset endpoint pointers so no new publishes/subscribes happen
+    pub_ptr = NULL;
+    sub_ptr = NULL;
+
+    // 2. Reset match state
+    subMatched = false;
+    pubMatched = false;
+
+    // Note: We do NOT call domain_ptr->stop() because it terminates
+    // FreeRTOS background threads which causes an abort.
+    // On ESP32, the system is typically rebooted rather than cleanly shut down.
+    // Background threads will be cleaned up on reboot.
+
+    part_ptr = NULL;
+    completeNodeInit = false;
+
+    MROS2_DEBUG("[MROS2LIB] shutdown() complete");
   }
 
   /*
@@ -145,9 +170,7 @@ namespace mros2
     if (node.part == nullptr)
     {
       MROS2_ERROR("[MROS2LIB] ERROR: create_node() failed");
-      while (true)
-      {
-      }
+      handle_fatal_error(ErrorCode::NODE_CREATION_FAILED, "create_node");
     }
     completeNodeInit = true;
 
@@ -159,15 +182,14 @@ namespace mros2
    *  Publisher functions
    */
   template <class T>
-  Publisher Node::create_publisher(std::string topic_name, const QoSProfile& qos)
+  Publisher Node::create_publisher(const std::string& topic_name, const QoSProfile& qos)
   {
     if (!QoSPolicy::validate(qos))
     {
       MROS2_ERROR("[MROS2LIB] invalid publisher QoS for %s: %s",
                   topic_name.c_str(), QoSPolicy::validation_error(qos));
-      while (true)
-      {
-      }
+      handle_fatal_error(ErrorCode::INVALID_QOS_PROFILE,
+                        ("create_publisher:" + topic_name).c_str());
     }
 
     // Select Stateful (RELIABLE) or Stateless (BEST_EFFORT) from the QoS profile.
@@ -197,9 +219,8 @@ namespace mros2
     if (writer == nullptr)
     {
       MROS2_ERROR("[MROS2LIB] ERROR: failed to create writer in create_publisher()");
-      while (true)
-      {
-      }
+      handle_fatal_error(ErrorCode::WRITER_CREATION_FAILED,
+                        ("create_publisher:" + topic_name).c_str());
     }
 
     Publisher pub;
@@ -291,15 +312,14 @@ namespace mros2
   } SubscribeDataType;
 
   template <class T>
-  Subscriber Node::create_subscription(std::string topic_name, const QoSProfile& qos, void (*fp)(T *))
+  Subscriber Node::create_subscription(const std::string& topic_name, const QoSProfile& qos, void (*fp)(T *))
   {
     if (!QoSPolicy::validate(qos))
     {
       MROS2_ERROR("[MROS2LIB] invalid subscriber QoS for %s: %s",
                   topic_name.c_str(), QoSPolicy::validation_error(qos));
-      while (true)
-      {
-      }
+      handle_fatal_error(ErrorCode::INVALID_QOS_PROFILE,
+                        ("create_subscription:" + topic_name).c_str());
     }
 
     // Select Stateful (RELIABLE) or Stateless (BEST_EFFORT) from the QoS profile.
@@ -322,9 +342,8 @@ namespace mros2
     if (reader == nullptr)
     {
       MROS2_ERROR("[MROS2LIB] ERROR: failed to create reader in create_subscription()");
-      while (true)
-      {
-      }
+      handle_fatal_error(ErrorCode::READER_CREATION_FAILED,
+                        ("create_subscription:" + topic_name).c_str());
     }
 
     Subscriber sub;
@@ -336,11 +355,13 @@ namespace mros2
     reader->setDeadlineMs(qos.deadline_ms());
     reader->setLivelinessLeaseMs(qos.liveliness_lease_ms());
 
-    SubscribeDataType *data_p;
-    data_p = new SubscribeDataType;
-    data_p->cb_fp = (void (*)(intptr_t))fp;
-    data_p->argp = (intptr_t)NULL;
-    reader->registerCallback(sub.callback_handler<T>, (void *)data_p);
+    // Use static allocation to avoid memory leak
+    // Note: This limits to one subscriber per program, but matches current
+    // single-instance design with global sub_ptr
+    static SubscribeDataType callback_data;
+    callback_data.cb_fp = (void (*)(intptr_t))fp;
+    callback_data.argp = (intptr_t)NULL;
+    reader->registerCallback(sub.callback_handler<T>, (void *)&callback_data);
 
     /* Register callback to ensure that a subscriber is matched to the reader before receiving messages */
     part_ptr->registerOnNewPublisherMatchedCallback(subMatch, &pubMatched);
@@ -474,6 +495,23 @@ namespace mros2
     return sub_ptr == nullptr ? 0 : sub_ptr->getUnmatchedWriterDropCount();
   }
 
+  uint32_t subscriber_liveliness_lost_count()
+  {
+    return sub_ptr == nullptr ? 0 : sub_ptr->getLivelinessLostCount();
+  }
+
+  uint32_t subscriber_liveliness_recovered_count()
+  {
+    return sub_ptr == nullptr ? 0 : sub_ptr->getLivelinessRecoveredCount();
+  }
+
+  void subscriber_check_liveliness()
+  {
+    if (sub_ptr != nullptr) {
+      sub_ptr->checkLiveliness();
+    }
+  }
+
   /* implementation for mros2-mbed */
 #ifdef __MBED__
   int setIPAddrRTPS(std::array<uint8_t, 4> ipaddr)
@@ -543,7 +581,7 @@ extern "C" void callHbSubFunc(void *arg)
 
 void setTrue(void *args)
 {
-  *static_cast<volatile bool *>(args) = true;
+  *static_cast<std::atomic<bool> *>(args) = true;
 }
 
 namespace rtps

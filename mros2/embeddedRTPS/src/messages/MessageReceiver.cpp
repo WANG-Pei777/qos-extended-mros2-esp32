@@ -54,6 +54,11 @@ void MessageReceiver::resetState() {
 }
 
 bool MessageReceiver::processMessage(const uint8_t *data, DataSize_t size) {
+  // Validate minimum packet size: RTPS Header is 20 bytes minimum
+  if (data == nullptr || size < Header::getRawSize()) {
+    return false;
+  }
+
   resetState();
   MessageProcessingInfo msgInfo(data, size);
 
@@ -125,8 +130,15 @@ bool MessageReceiver::processSubmessage(MessageProcessingInfo &msgInfo,
              static_cast<uint8_t>(submsgHeader.submessageId));
     success = false;
   }
-  msgInfo.nextPos +=
-      submsgHeader.octetsToNextHeader + SubmessageHeader::getRawSize();
+
+  // Safe advance: check for overflow before advancing nextPos
+  const DataSize_t totalSubmsgSize =
+      static_cast<DataSize_t>(submsgHeader.octetsToNextHeader) +
+      SubmessageHeader::getRawSize();
+  if (!msgInfo.advance(totalSubmsgSize)) {
+    return false;
+  }
+
   return success;
 }
 
@@ -137,11 +149,16 @@ bool MessageReceiver::processDataSubmessage(
     return false;
   }
 
-  const uint8_t *serializedData =
-      msgInfo.getPointerToCurrentPos() + SubmessageData::getRawSize();
+  // Bounds check: ensure enough data remains for the payload
+  const uint16_t dataHeaderSize = SubmessageData::getRawSize();
+  if (submsgHeader.octetsToNextHeader < dataHeaderSize) {
+    return false;
+  }
 
-  const DataSize_t size = submsgHeader.octetsToNextHeader -
-                          SubmessageData::getRawSize() +
+  const uint8_t *serializedData =
+      msgInfo.getPointerToCurrentPos() + dataHeaderSize;
+
+  const DataSize_t size = submsgHeader.octetsToNextHeader - dataHeaderSize +
                           SubmessageHeader::getRawSize();
 
   RECV_LOG("Received data message size %u", (int)size);

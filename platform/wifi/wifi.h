@@ -21,8 +21,12 @@
 #define ESP_WIFI_PASS "YOUR_WIFI_PASSWORD"
 #endif
 
-#define ESP_MAXIMUM_RETRY 3
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#define ESP_MAXIMUM_RETRY 5
+// Weakest auth mode the STA will associate with. WPA2_PSK is the Espressif
+// station default: it accepts WPA2, WPA/WPA2-mixed, WPA3, and WPA2/WPA3
+// transition APs while still rejecting open/WEP/WPA1. Do not raise this to
+// WPA2_WPA3_PSK: that value refuses plain WPA2 and even pure WPA3 networks.
+#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1

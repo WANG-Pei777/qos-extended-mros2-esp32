@@ -417,7 +417,26 @@ struct MessageProcessingInfo {
   }
 
   //! Returns the size of data which isn't processed yet
-  inline DataSize_t getRemainingSize() const { return size - nextPos; }
+  inline DataSize_t getRemainingSize() const {
+    if (nextPos > size) {
+      return 0;
+    }
+    return size - nextPos;
+  }
+
+  //! Check if there is enough data remaining for a given byte count
+  inline bool hasRemaining(DataSize_t needed) const {
+    return getRemainingSize() >= needed;
+  }
+
+  //! Safe advance that returns false if it would overflow the buffer
+  inline bool advance(DataSize_t bytes) {
+    if (nextPos + bytes > size) {
+      return false;
+    }
+    nextPos += bytes;
+    return true;
+  }
 };
 
 bool deserializeMessage(const MessageProcessingInfo &info, Header &header);

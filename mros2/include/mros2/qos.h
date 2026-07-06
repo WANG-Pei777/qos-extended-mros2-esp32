@@ -63,20 +63,34 @@ struct QoSProfile {
     uint32_t max_bytes;     // Resource Limits: 0 = unlimited
 
     // Helper methods: convert durations to milliseconds.
+    // Clamps to UINT32_MAX on overflow to prevent undefined behavior.
     uint32_t deadline_ms() const {
         if (deadline.is_infinite()) return 0;
         if (!deadline.is_valid()) return 0;
-        return static_cast<uint32_t>(deadline.sec) * 1000 + deadline.nanosec / 1000000;
+        // Check for overflow: if sec > UINT32_MAX/1000, clamp to max
+        if (deadline.sec > UINT32_MAX / 1000) return UINT32_MAX;
+        uint32_t ms_from_sec = static_cast<uint32_t>(deadline.sec) * 1000;
+        uint32_t ms_from_nsec = deadline.nanosec / 1000000;
+        if (ms_from_sec > UINT32_MAX - ms_from_nsec) return UINT32_MAX;
+        return ms_from_sec + ms_from_nsec;
     }
     uint32_t lifespan_ms() const {
         if (lifespan.is_infinite()) return 0;
         if (!lifespan.is_valid()) return 0;
-        return static_cast<uint32_t>(lifespan.sec) * 1000 + lifespan.nanosec / 1000000;
+        if (lifespan.sec > UINT32_MAX / 1000) return UINT32_MAX;
+        uint32_t ms_from_sec = static_cast<uint32_t>(lifespan.sec) * 1000;
+        uint32_t ms_from_nsec = lifespan.nanosec / 1000000;
+        if (ms_from_sec > UINT32_MAX - ms_from_nsec) return UINT32_MAX;
+        return ms_from_sec + ms_from_nsec;
     }
     uint32_t liveliness_lease_ms() const {
         if (liveliness_lease_duration.is_infinite()) return 0;
         if (!liveliness_lease_duration.is_valid()) return 0;
-        return static_cast<uint32_t>(liveliness_lease_duration.sec) * 1000 + liveliness_lease_duration.nanosec / 1000000;
+        if (liveliness_lease_duration.sec > UINT32_MAX / 1000) return UINT32_MAX;
+        uint32_t ms_from_sec = static_cast<uint32_t>(liveliness_lease_duration.sec) * 1000;
+        uint32_t ms_from_nsec = liveliness_lease_duration.nanosec / 1000000;
+        if (ms_from_sec > UINT32_MAX - ms_from_nsec) return UINT32_MAX;
+        return ms_from_sec + ms_from_nsec;
     }
 
     // Default constructor aligned with ROS2 defaults.

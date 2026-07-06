@@ -147,7 +147,10 @@ struct LocatorIPv4 {
   uint32_t port = LOCATOR_PORT_INVALID;
 
   LocatorIPv4() = default;
-  LocatorIPv4(const FullLengthLocator &locator) {
+  // Intentionally implicit: narrowing a FullLengthLocator to its IPv4 view is a
+  // core idiom across the RTPS discovery/domain code (ReaderProxy/WriterProxy
+  // construction, TopicData compression). Making it explicit breaks those sites.
+  LocatorIPv4(const FullLengthLocator &locator) { // NOLINT(google-explicit-constructor)
     address[0] = locator.address[12];
     address[1] = locator.address[13];
     address[2] = locator.address[14];

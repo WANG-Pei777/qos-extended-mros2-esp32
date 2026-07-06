@@ -44,7 +44,7 @@ idf_component_register(
         INCLUDE_DIRS ${INCS}
         REQUIRES nvs_flash esp_wifi)
 
-# Generate plaform/templates.hpp from mros2 application code
+# Generate platform/templates.hpp from mros2 application code
 ## You can add dir(s) in `--indir` if you have several dirs 
 ## that contain application code files
 add_custom_command(

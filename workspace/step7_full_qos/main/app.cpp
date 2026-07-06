@@ -519,6 +519,11 @@ extern "C" void app_main(void)
                mros2::subscriber_out_of_order_drop_count());
     MROS2_INFO("  Reader unmatched-writer drop count: %u",
                mros2::subscriber_unmatched_writer_drop_count());
+    mros2::subscriber_check_liveliness();
+    MROS2_INFO("  Reader liveliness lost count: %u",
+               mros2::subscriber_liveliness_lost_count());
+    MROS2_INFO("  Reader liveliness recovered count: %u",
+               mros2::subscriber_liveliness_recovered_count());
     MROS2_INFO("Performance:");
     MROS2_INFO("  TX: %u msgs", perf.tx_count);
     MROS2_INFO("  RX: %u msgs", perf.rx_count);
@@ -544,6 +549,11 @@ extern "C" void app_main(void)
     
     MROS2_INFO("All phases complete.");
 
+    // Verify shutdown() API works without crashing
+    MROS2_INFO("Testing shutdown() API...");
+    mros2::shutdown();
+    MROS2_INFO("shutdown() returned successfully - API works.");
+
     phase = 7;
     osDelay(osWaitForever);  // Block forever (main spin loop continues)
   }, NULL, &attr);
@@ -558,6 +568,8 @@ extern "C" void app_main(void)
       if (deadline_mgr.shouldCheck(spin_count)) {
         deadline_mgr.checkMissed();
       }
+      // Check liveliness state machine periodically
+      mros2::subscriber_check_liveliness();
     }
   }
 

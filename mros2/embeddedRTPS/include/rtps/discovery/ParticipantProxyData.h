@@ -50,7 +50,7 @@ public:
   Guid_t m_guid = Guid_t{GUIDPREFIX_UNKNOWN, ENTITYID_UNKNOWN};
   VendorId_t m_vendorId = VENDOR_UNKNOWN;
   bool m_expectsInlineQos = false;
-  BuiltinEndpointSet_t m_availableBuiltInEndpoints;
+  BuiltinEndpointSet_t m_availableBuiltInEndpoints = 0;
   std::array<LocatorIPv4, Config::SPDP_MAX_NUM_LOCATORS>
       m_metatrafficUnicastLocatorList;
   std::array<LocatorIPv4, Config::SPDP_MAX_NUM_LOCATORS>

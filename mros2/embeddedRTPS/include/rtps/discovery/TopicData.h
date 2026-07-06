@@ -101,7 +101,7 @@ struct TopicDataCompressed {
   uint32_t maxBytes = 0;
 
   TopicDataCompressed() = default;
-  TopicDataCompressed(const TopicData &topic_data) {
+  explicit TopicDataCompressed(const TopicData &topic_data) {
     endpointGuid = topic_data.endpointGuid;
     topicHash =
         hashCharArray(topic_data.topicName, Config::MAX_TOPICNAME_LENGTH);

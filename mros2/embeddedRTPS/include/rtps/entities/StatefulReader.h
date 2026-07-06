@@ -48,8 +48,8 @@ public:
                       const GuidPrefix_t &remotePrefix) override;
 
   // QoS configuration
-  void setDeadlineMs(uint32_t ms) { m_deadlineMs = ms; }
-  void setLivelinessLeaseMs(uint32_t ms) { m_livelinessLeaseMs = ms; }
+  void setDeadlineMs(uint32_t ms) override { m_deadlineMs = ms; }
+  void setLivelinessLeaseMs(uint32_t ms) override { m_livelinessLeaseMs = ms; }
   void setDeadlineMissedCallback(void (*cb)(void *), void *arg) {
     m_deadlineMissedCb = cb;
     m_deadlineMissedArg = arg;
@@ -70,6 +70,11 @@ public:
   }
   // Periodic check: call from app thread to detect deadline misses
   bool checkDeadlineMissed();
+
+  // Liveliness state machine: detect lost/recovered transitions
+  void checkLiveliness() override;
+  uint32_t getLivelinessLostCount() const override { return m_livelinessLostCount; }
+  uint32_t getLivelinessRecoveredCount() const override { return m_livelinessRecoveredCount; }
 
 private:
   PacketInfo
@@ -98,6 +103,11 @@ private:
   uint32_t m_unmatchedWriterDropCount = 0;
   Guid_t m_pendingWriterGuid = GUID_UNKNOWN;
   SequenceNumber_t m_pendingNextSN = SEQUENCENUMBER_UNKNOWN;
+
+  // Liveliness state machine
+  bool m_lastAliveState = true; // assume alive initially
+  uint32_t m_livelinessLostCount = 0;
+  uint32_t m_livelinessRecoveredCount = 0;
 };
 
 using StatefulReader = StatefulReaderT<UdpDriver>;

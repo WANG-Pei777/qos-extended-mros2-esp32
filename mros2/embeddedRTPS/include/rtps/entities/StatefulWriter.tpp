@@ -107,27 +107,47 @@ bool StatefulWriterT<NetworkDriver>::addNewMatchedReader(
     manageSendOptions();
   }
 
-  // Durability TRANSIENT_LOCAL: send cached history to new reader
+  // Durability TRANSIENT_LOCAL: send HEARTBEAT then cached history to new reader.
+  // The HEARTBEAT announces the available sequence number range so the remote
+  // reader can process the subsequent DATA submessages correctly.
   if (success && m_attributes.durabilityKind == DurabilityKind_t::TRANSIENT_LOCAL) {
     Lock lock(m_mutex);
-    SequenceNumber_t sn = m_history.getSeqNumMin();
-    SequenceNumber_t maxSn = m_history.getSeqNumMax();
-    while (sn <= maxSn) {
-      const CacheChange *change = m_history.getChangeBySN(sn);
-      if (change != nullptr) {
-        PacketInfo info;
-        info.srcPort = m_packetInfo.srcPort;
-        info.destAddr = newProxy.remoteLocator.getIp4Address();
-        info.destPort = (Ip4Port_t)newProxy.remoteLocator.port;
-        MessageFactory::addHeader(info.buffer, m_attributes.endpointGuid.prefix);
-        MessageFactory::addSubMessageTimeStamp(info.buffer);
-        MessageFactory::addSubMessageData(
-            info.buffer, change->data, false, change->sequenceNumber,
-            m_attributes.endpointGuid.entityId,
-            newProxy.remoteReaderGuid.entityId);
-        m_transport->sendPacket(info);
+    SequenceNumber_t firstSN = m_history.getSeqNumMin();
+    SequenceNumber_t lastSN = m_history.getSeqNumMax();
+
+    if (firstSN != SEQUENCENUMBER_UNKNOWN && lastSN != SEQUENCENUMBER_UNKNOWN) {
+      // Step 1: Send HEARTBEAT to announce available data range
+      PacketInfo hbInfo;
+      hbInfo.srcPort = m_packetInfo.srcPort;
+      hbInfo.destAddr = newProxy.remoteLocator.getIp4Address();
+      hbInfo.destPort = (Ip4Port_t)newProxy.remoteLocator.port;
+      MessageFactory::addHeader(hbInfo.buffer, m_attributes.endpointGuid.prefix);
+      MessageFactory::addHeartbeat(hbInfo.buffer,
+          m_attributes.endpointGuid.entityId,
+          newProxy.remoteReaderGuid.entityId,
+          firstSN, lastSN, m_hbCount);
+      m_transport->sendPacket(hbInfo);
+      m_hbCount.value++;
+
+      // Step 2: Send cached DATA as hint (reader may also ACKNACK)
+      SequenceNumber_t sn = firstSN;
+      while (sn <= lastSN) {
+        const CacheChange *change = m_history.getChangeBySN(sn);
+        if (change != nullptr) {
+          PacketInfo info;
+          info.srcPort = m_packetInfo.srcPort;
+          info.destAddr = newProxy.remoteLocator.getIp4Address();
+          info.destPort = (Ip4Port_t)newProxy.remoteLocator.port;
+          MessageFactory::addHeader(info.buffer, m_attributes.endpointGuid.prefix);
+          MessageFactory::addSubMessageTimeStamp(info.buffer);
+          MessageFactory::addSubMessageData(
+              info.buffer, change->data, false, change->sequenceNumber,
+              m_attributes.endpointGuid.entityId,
+              newProxy.remoteReaderGuid.entityId);
+          m_transport->sendPacket(info);
+        }
+        ++sn;
       }
-      ++sn;
     }
   }
 
@@ -347,7 +367,8 @@ template <class NetworkDriver> void StatefulWriterT<NetworkDriver>::progress() {
       if (change->timestampMs > 0 && (now - change->timestampMs) > m_lifespanMs) {
         m_lifespanDropCount++;
         printf("[RTPS Lifespan] Dropped SN(%u,%u) age=%ums > %ums (total drops=%u)\n",
-               change->sequenceNumber.high, change->sequenceNumber.low,
+               (unsigned int)change->sequenceNumber.high,
+               (unsigned int)change->sequenceNumber.low,
                (unsigned int)(now - change->timestampMs),
                (unsigned int)m_lifespanMs,
                (unsigned int)m_lifespanDropCount);

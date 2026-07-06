@@ -111,6 +111,9 @@ public:
   virtual uint32_t getAcceptedBeforeMatchCount() const { return 0; }
   virtual uint32_t getOutOfOrderDropCount() const { return 0; }
   virtual uint32_t getUnmatchedWriterDropCount() const { return 0; }
+  virtual void checkLiveliness() {}
+  virtual uint32_t getLivelinessLostCount() const { return 0; }
+  virtual uint32_t getLivelinessRecoveredCount() const { return 0; }
 
 protected:
   bool m_is_initialized_ = false;

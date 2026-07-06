@@ -331,12 +331,16 @@ rtps::Writer *Domain::createWriter(Participant &part, const char *topicName,
   // TODO Distinguish WithKey and NoKey (Also changes EntityKind)
   TopicData attributes;
 
-  if (strlen(topicName) > Config::MAX_TOPICNAME_LENGTH ||
-      strlen(typeName) > Config::MAX_TYPENAME_LENGTH) {
+  // Bounds check: >= because we need space for null terminator
+  if (strlen(topicName) >= Config::MAX_TOPICNAME_LENGTH ||
+      strlen(typeName) >= Config::MAX_TYPENAME_LENGTH) {
     return nullptr;
   }
-  strcpy(attributes.topicName, topicName);
-  strcpy(attributes.typeName, typeName);
+  // Use strncpy with explicit null termination for safety
+  strncpy(attributes.topicName, topicName, Config::MAX_TOPICNAME_LENGTH - 1);
+  attributes.topicName[Config::MAX_TOPICNAME_LENGTH - 1] = '\0';
+  strncpy(attributes.typeName, typeName, Config::MAX_TYPENAME_LENGTH - 1);
+  attributes.typeName[Config::MAX_TYPENAME_LENGTH - 1] = '\0';
   attributes.endpointGuid.prefix = part.m_guidPrefix;
   attributes.endpointGuid.entityId = {
       part.getNextUserEntityKey(),
@@ -397,12 +401,16 @@ rtps::Reader *Domain::createReader(Participant &part, const char *topicName,
   // TODO Distinguish WithKey and NoKey (Also changes EntityKind)
   TopicData attributes;
 
-  if (strlen(topicName) > Config::MAX_TOPICNAME_LENGTH ||
-      strlen(typeName) > Config::MAX_TYPENAME_LENGTH) {
+  // Bounds check: >= because we need space for null terminator
+  if (strlen(topicName) >= Config::MAX_TOPICNAME_LENGTH ||
+      strlen(typeName) >= Config::MAX_TYPENAME_LENGTH) {
     return nullptr;
   }
-  strcpy(attributes.topicName, topicName);
-  strcpy(attributes.typeName, typeName);
+  // Use strncpy with explicit null termination for safety
+  strncpy(attributes.topicName, topicName, Config::MAX_TOPICNAME_LENGTH - 1);
+  attributes.topicName[Config::MAX_TOPICNAME_LENGTH - 1] = '\0';
+  strncpy(attributes.typeName, typeName, Config::MAX_TYPENAME_LENGTH - 1);
+  attributes.typeName[Config::MAX_TYPENAME_LENGTH - 1] = '\0';
   attributes.endpointGuid.prefix = part.m_guidPrefix;
   attributes.endpointGuid.entityId = {
       part.getNextUserEntityKey(),
