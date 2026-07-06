@@ -1,23 +1,73 @@
+# Build artifacts
 build/
-workspace/*/build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# ESP-IDF specific
+sdkconfig
+sdkconfig.old
+dependencies.lock
+managed_components/
+
+# Analysis reports
+build/analysis_reports/
+build/performance_results/
+build/stability_results/
+build/docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Results and logs
 results/
+*.log
+
+# Secrets and local config
 platform/wifi/wifi_secrets.h
 platform/rtps/config_local.h
-sdkconfig
-!workspace/step7_full_qos/sdkconfig
-*.old
-*.lock
-*.log
-.env
-__pycache__/
-*.py[cod]
-.DS_Store
-._*
-managed_components/
-compile_commands.json
 
-# The templates of pub/sub functions
-## This file will be automatically generated/modified
-## during the build step. So you do not have to care
-## about this file.
-platform/templates.hpp
+# Archive (moved files)
+archive/
+
+# Documentation builds
+docs/**/*.html
+docs/**/*.pdf
+*.pptx
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+*~
+
+# Coverage
+*.gcda
+*.gcno
+*.gcov
+coverage/
+htmlcov/
+
+# Claude project files
+.claude/
+
+# GitHub workflows artifacts
+.github/

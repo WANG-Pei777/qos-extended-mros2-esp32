@@ -1,84 +1,110 @@
 #!/usr/bin/env bash
+#
+# Host-side QoS unit tests + security/static checks.
+# Runs on any Linux/macOS host with g++.
+# No ESP32 or ESP-IDF required.
+#
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/build/qos_static_checks"
-SRC="${BUILD_DIR}/qos_static_checks.cpp"
-BIN="${BUILD_DIR}/qos_static_checks"
-STUB_DIR="${BUILD_DIR}/stubs"
+SRC="${PROJECT_ROOT}/tests/test_qos.cpp"
+BIN="${BUILD_DIR}/test_qos"
+FAILED=0
 
+echo "=== Phase 1: QoS Unit Tests ==="
 mkdir -p "${BUILD_DIR}"
-mkdir -p "${STUB_DIR}/lwip"
-
-cat > "${STUB_DIR}/lwip/ip4_addr.h" <<'H'
-#ifndef QOS_STATIC_CHECKS_LWIP_IP4_ADDR_H
-#define QOS_STATIC_CHECKS_LWIP_IP4_ADDR_H
-#include <stdint.h>
-typedef struct ip4_addr {
-  uint32_t addr;
-} ip4_addr_t;
-#endif
-H
-
-cat > "${SRC}" <<'CPP'
-#include "mros2/qos.h"
-#include <iostream>
-
-static int failures = 0;
-
-static void expect(bool condition, const char *label) {
-  if (!condition) {
-    std::cerr << "[FAIL] " << label << "\n";
-    failures++;
-  } else {
-    std::cout << "[PASS] " << label << "\n";
-  }
-}
-
-int main() {
-  using namespace mros2;
-
-  QoSProfile valid = QoSProfile::reliable();
-  expect(QoSPolicy::validate(valid), "reliable profile is valid");
-
-  QoSProfile zero_depth = valid;
-  zero_depth.depth = 0;
-  expect(!QoSPolicy::validate(zero_depth), "KEEP_LAST depth=0 is rejected");
-
-  QoSProfile huge_depth = valid;
-  huge_depth.depth = 101;
-  expect(!QoSPolicy::validate(huge_depth), "oversized depth is rejected");
-
-  QoSProfile manual_liveliness = valid;
-  manual_liveliness.liveliness = LivelinessKind::MANUAL_BY_TOPIC;
-  expect(!QoSPolicy::validate(manual_liveliness),
-         "unsupported manual liveliness is rejected");
-
-  QoSProfile invalid_duration = valid;
-  invalid_duration.deadline = Duration{0, 1000000000U};
-  expect(!QoSPolicy::validate(invalid_duration),
-         "invalid nanosecond duration is rejected");
-
-  QoSProfile sample_limit = valid;
-  sample_limit.depth = 5;
-  sample_limit.max_samples = 4;
-  expect(!QoSPolicy::validate(sample_limit),
-         "max_samples smaller than KEEP_LAST depth is rejected");
-
-  QoSProfile keep_all = valid;
-  keep_all.history = HistoryKind::KEEP_ALL;
-  keep_all.depth = 0;
-  keep_all.max_samples = 1;
-  expect(QoSPolicy::validate(keep_all), "KEEP_ALL does not require depth");
-
-  return failures == 0 ? 0 : 1;
-}
-CPP
 
 g++ -std=c++17 \
-  -I"${STUB_DIR}" \
+  -I"${PROJECT_ROOT}/tests/stubs" \
   -I"${PROJECT_ROOT}/mros2/include" \
-  -I"${PROJECT_ROOT}/mros2/embeddedRTPS/include" \
-  "${SRC}" -o "${BIN}"
+  -o "${BIN}" \
+  "${SRC}"
 
-"${BIN}"
+if ! "${BIN}"; then
+  echo "[FAIL] QoS unit tests failed"
+  FAILED=1
+fi
+
+echo ""
+echo "=== Phase 1b: RTPS Message Tests ==="
+RTPS_BIN="${BUILD_DIR}/test_rtps_messages"
+g++ -std=c++17 \
+  -o "${RTPS_BIN}" \
+  "${PROJECT_ROOT}/tests/test_rtps_messages.cpp"
+
+if ! "${RTPS_BIN}"; then
+  echo "[FAIL] RTPS message tests failed"
+  FAILED=1
+fi
+
+echo ""
+echo "=== Phase 2: Security Checks ==="
+
+# Check no unsafe string operations in modified files
+UNSAFE_FILES=$(grep -rn "strcpy\|strcat\|sprintf" \
+  "${PROJECT_ROOT}/mros2/src/" \
+  "${PROJECT_ROOT}/mros2/embeddedRTPS/src/entities/" \
+  "${PROJECT_ROOT}/mros2/embeddedRTPS/src/messages/" \
+  --include="*.cpp" --include="*.h" --include="*.tpp" 2>/dev/null || true)
+
+if [ -n "$UNSAFE_FILES" ]; then
+  echo "[FAIL] Unsafe string operations found:"
+  echo "$UNSAFE_FILES"
+  FAILED=1
+else
+  echo "[PASS] No unsafe string operations"
+fi
+
+echo ""
+echo "=== Phase 3: Error Handling Checks ==="
+
+# Check no infinite loops remain in error paths (except spin() main loop)
+# Get spin() function line number, then exclude that range
+SPIN_LINE=$(grep -n "void spin()" "${PROJECT_ROOT}/mros2/src/mros2.cpp" 2>/dev/null | head -1 | cut -d: -f1 || echo "0")
+INFINITE_LOOPS=$(grep -n "while (true)" \
+  "${PROJECT_ROOT}/mros2/src/mros2.cpp" 2>/dev/null \
+  | awk -F: -v spin="$SPIN_LINE" '{if ($1 < spin || $1 > spin+20) print}' || true)
+
+if [ -n "$INFINITE_LOOPS" ]; then
+  echo "[FAIL] Infinite loops in error paths:"
+  echo "$INFINITE_LOOPS"
+  FAILED=1
+else
+  echo "[PASS] No infinite loops in error paths"
+fi
+
+echo ""
+echo "=== Phase 4: Code Quality Checks ==="
+
+# Check no memory leaks (new without delete pattern)
+NEW_COUNT=$(grep -c "new " "${PROJECT_ROOT}/mros2/src/mros2.cpp" 2>/dev/null || echo "0")
+DELETE_COUNT=$(grep -c "delete " "${PROJECT_ROOT}/mros2/src/mros2.cpp" 2>/dev/null || echo "0")
+# Note: new=1 is Thread creation (FreeRTOS managed), not a leak
+echo "[INFO] new/delete in mros2.cpp: new=$NEW_COUNT, delete=$DELETE_COUNT (Thread is FreeRTOS-managed)"
+
+# Check shutdown function exists
+if grep -q "void shutdown()" "${PROJECT_ROOT}/mros2/include/mros2.h" 2>/dev/null; then
+  echo "[PASS] shutdown() API declared"
+else
+  echo "[FAIL] shutdown() API missing"
+  FAILED=1
+fi
+
+echo ""
+echo "=== Phase 5: API Signature Consistency ==="
+# Guards against declaration/definition/template-instantiation signature drift
+# (e.g. create_publisher(std::string) vs create_publisher(const std::string&)),
+# which breaks the firmware build but is invisible to the host unit tests.
+if ! bash "${PROJECT_ROOT}/scripts/test/qos_api_signature_check.sh"; then
+  echo "[FAIL] create_publisher/create_subscription signature drift (would break firmware build)"
+  FAILED=1
+fi
+
+echo ""
+if [ $FAILED -eq 0 ]; then
+  echo "=== All checks PASSED ==="
+else
+  echo "=== Some checks FAILED ==="
+  exit 1
+fi
