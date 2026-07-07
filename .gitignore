@@ -47,6 +47,8 @@ archive/
 # Documentation builds
 docs/**/*.html
 docs/**/*.pdf
+# ...but camera-ready figure PDFs are deliverables (source pcaps are local-only)
+!docs/figures/*.pdf
 *.pptx
 
 # OS specific
