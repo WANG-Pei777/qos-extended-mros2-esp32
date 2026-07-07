@@ -75,6 +75,41 @@ Interpretation for the paper:
 - Footprints are within 1.3 % of each other — neither side can claim a
   memory advantage from this measurement alone (RAM footprint still TODO).
 
+## Upstream mros2-esp32 ablation baseline (2026-07-07, N=1)
+
+Third baseline: vanilla upstream `mROS-base/mros2-esp32` (fixed BEST_EFFORT QoS,
+multicast-only discovery, no QoS extension, no reliability fixes), same board, same
+AP, same 500 ms / 40+ sample string-echo workload (host: `scripts/echo_best_effort.py`
+on `/step10_best_effort`(_reply); bench app in
+`~/upstream_bench/mros2-esp32/workspace/echoreply_string/`).
+
+| Metric | Upstream (BEST_EFFORT) | This fork (RELIABLE + QoS) |
+|---|---|---|
+| RTT min / avg / max | 12.8 / 21.6 / 43.8 ms (n=80) | 11.7 / 20.7 / 38.3 ms (n=40) |
+| Cold discovery to first reply | ~8 s (first reply at TX #16) | 8.7 s match wait |
+| Post-match delivery | lossless (all possible replies received) | 40/40 |
+| App binary size | 738,832 B | 779,920 B (**+41,088 B, +5.6 %**) |
+| Tick-seeded GUID bug (`Domain.cpp`) | **present** | fixed (esp_random) |
+| Warm re-match after reset | not measured (expect lease ghost: 100 s announced) | 0.4–0.9 s (12 s lease) |
+
+Ablation conclusions for the paper:
+
+1. **The QoS extension is essentially free on the data path**: RELIABLE with the
+   full QoS machinery matches vanilla BEST_EFFORT RTT within noise (20.7 vs
+   21.6 ms avg) while adding delivery guarantees.
+2. **Cost is +5.6 % flash** (41 KB) for seven QoS policies + validation + stats.
+3. **Cold discovery (~8–9 s) is inherited from upstream/FastDDS interplay**, not
+   introduced by the QoS extension — and the fork's 12 s-lease fix makes warm
+   re-match ~20× faster than the cold path.
+4. The GUID entropy bug exists upstream (same `srand(xTaskGetTickCount())`),
+   making the fix an upstream-relevant contribution.
+
+Upstream engineering notes (worth reporting as issues):
+- `templates_generator.py` crashes on source comments that mention the pub/sub
+  factory names without template brackets (`line.index('<')` unguarded).
+- Example `main` components lack the `esp_timer` requirement; on-board timing
+  benchmarks need `PRIV_REQUIRES esp_timer`.
+
 ## Status
 
 - [x] micro-ROS firmware built for ESP32-S3 (`micro_ros_espidf_component`, humble, IDF v5.1.7)
