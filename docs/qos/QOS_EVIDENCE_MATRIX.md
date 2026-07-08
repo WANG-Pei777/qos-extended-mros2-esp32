@@ -1,5 +1,9 @@
 # QoS Evidence Matrix
 
+> **Naming note (2026-07-07):** the validation app and topics were renamed
+> `step7_full_qos` → `qos_eval` before the measurement campaign freeze.
+> Historical evidence below keeps the names it was recorded under.
+
 This document describes only facts that are currently supported by source code, real-hardware logs, or ROS2 discovery. It does not present the validation results as complete DDS product-grade capability.
 
 ## Validation Scope

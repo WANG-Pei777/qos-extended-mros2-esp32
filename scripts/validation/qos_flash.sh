@@ -4,7 +4,7 @@ set -euo pipefail
 POLICY="${1:-all}"
 PORT="${2:-/dev/ttyUSB0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-WORKSPACE="step7_full_qos"
+WORKSPACE="qos_eval"
 
 usage() {
   cat <<'EOF'

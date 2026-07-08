@@ -14,7 +14,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP_DIR="${PROJECT_ROOT}/workspace/step7_full_qos"
+APP_DIR="${PROJECT_ROOT}/workspace/qos_eval"
 
 # Bring ESP-IDF into the environment if idf.py is not already on PATH.
 if ! command -v idf.py >/dev/null 2>&1; then

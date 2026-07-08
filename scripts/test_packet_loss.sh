@@ -24,7 +24,7 @@ echo "  tc rule active"
 
 # Step 2: Flash ESP32
 echo "[2/5] Flashing ESP32..."
-cd "$PROJECT_ROOT/workspace/step7_full_qos"
+cd "$PROJECT_ROOT/workspace/qos_eval"
 source ~/esp-idf/export.sh >/dev/null 2>&1
 idf.py -p /dev/ttyUSB0 flash >/dev/null 2>&1
 echo "  Flash complete"

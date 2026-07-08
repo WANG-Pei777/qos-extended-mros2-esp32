@@ -1,0 +1,58 @@
+{
+  "project_root": "/home/wsde-47/mROS2-QoS",
+  "config_file": "platform/rtps/config.h",
+  "serial_port": "/dev/ttyUSB0",
+  "results_dir": "results/param_sweep",
+  "pcap_dir": "results/param_sweep/pcaps",
+
+  "build_commands": [
+    "source /home/wsde-47/esp/esp-idf/export.sh",
+    "idf.py build"
+  ],
+  "flash_command": "idf.py -p {port} flash",
+
+  "test_config": {
+    "settle_time": 8,
+    "capture_duration": 75,
+    "repetitions": 30,
+    "tshark_filter": "udp portrange 7400-7420"
+  },
+
+  "parameters": {
+    "heartbeat_period": {
+      "file": "platform/rtps/config.h",
+      "line_pattern": "const uint16_t SF_WRITER_HB_PERIOD_MS =",
+      "values": [100, 500, 1000, 2000, 4000, 8000],
+      "default": 4000,
+      "unit": "ms"
+    },
+    "history_size": {
+      "file": "platform/rtps/config.h",
+      "line_pattern": "const uint8_t HISTORY_SIZE_STATEFUL =",
+      "values": [3, 5, 10, 20, 30, 50],
+      "default": 10,
+      "unit": "samples"
+    },
+    "spdp_period": {
+      "file": "platform/rtps/config.h",
+      "line_pattern": "const uint16_t SPDP_RESEND_PERIOD_MS =",
+      "values": [250, 500, 1000, 2000, 5000],
+      "default": 1000,
+      "unit": "ms"
+    },
+    "lease_duration": {
+      "file": "platform/rtps/config.h",
+      "line_pattern": "const Duration_t SPDP_DEFAULT_REMOTE_LEASE_DURATION =",
+      "values": [
+        {"seconds": 5, "nanoseconds": 0},
+        {"seconds": 12, "nanoseconds": 0},
+        {"seconds": 30, "nanoseconds": 0},
+        {"seconds": 60, "nanoseconds": 0},
+        {"seconds": 180, "nanoseconds": 0}
+      ],
+      "default": {"seconds": 12, "nanoseconds": 0},
+      "unit": "seconds",
+      "format": "{{{seconds}, {nanoseconds}}}"
+    }
+  }
+}

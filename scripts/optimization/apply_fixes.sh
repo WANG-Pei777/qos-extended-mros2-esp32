@@ -105,7 +105,7 @@ if [ "$FIXED_COUNT" -gt 0 ]; then
     echo "Next steps:"
     echo "  1. Review changes: git diff"
     echo "  2. Re-run analysis: ./scripts/analysis/run_static_analysis.sh"
-    echo "  3. Test build: cd workspace/step7_full_qos && idf.py build"
+    echo "  3. Test build: cd workspace/qos_eval && idf.py build"
 else
     echo "⚠ No fixes were applied (already fixed or patterns not found)"
 fi

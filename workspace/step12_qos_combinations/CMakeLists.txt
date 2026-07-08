@@ -6,4 +6,4 @@ set(EXTRA_COMPONENT_DIRS ../../components)
 add_compile_options(-w)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(step7_full_qos)
+project(step12_qos_combinations)

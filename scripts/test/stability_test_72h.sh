@@ -35,7 +35,7 @@ echo ""
 
 # Flash firmware
 echo "Flashing firmware..."
-cd "${PROJECT_ROOT}/workspace/step7_full_qos"
+cd "${PROJECT_ROOT}/workspace/qos_eval"
 idf.py build
 idf.py -p "${DEVICE}" flash
 

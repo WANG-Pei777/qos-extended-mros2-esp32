@@ -31,7 +31,7 @@ echo ""
 
 # Flash the performance test firmware
 echo "[1/3] Building and flashing performance test firmware..."
-cd "${PROJECT_ROOT}/workspace/step7_full_qos"
+cd "${PROJECT_ROOT}/workspace/qos_eval"
 
 # Build
 idf.py build || {
@@ -74,7 +74,7 @@ cat > "${RESULT_FILE}" <<EOF
 {
   "timestamp": "$(date -Iseconds)",
   "device": "${DEVICE}",
-  "firmware": "step7_full_qos",
+  "firmware": "qos_eval",
   "test_duration_seconds": 60,
   "metrics": {
     "throughput": {

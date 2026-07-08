@@ -69,7 +69,7 @@ jobs:
         with:
           esp_idf_version: v5.1.7   # if this image tag is unavailable, fall back to v5.1
           target: esp32s3
-          path: workspace/step7_full_qos
+          path: workspace/qos_eval
           command: pip install jinja2 && idf.py build
 
   cppcheck-analysis:

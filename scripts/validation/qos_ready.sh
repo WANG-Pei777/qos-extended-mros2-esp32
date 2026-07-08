@@ -57,7 +57,7 @@ set +u
 source "${HOME}/esp-idf/export.sh" >/tmp/mros2_idf_export.log 2>&1
 set -u
 (
-  cd "${PROJECT_ROOT}/workspace/step7_full_qos"
+  cd "${PROJECT_ROOT}/workspace/qos_eval"
   MROS2_QOS_FULL_RELIABLE_REPLY=1 idf.py build
 )
 echo

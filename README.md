@@ -13,7 +13,7 @@ USB serial is used only for flashing and observing logs. The actual ROS2/mROS2 c
 The primary hardware validation firmware is:
 
 ```text
-workspace/step7_full_qos
+workspace/qos_eval
 ```
 
 Quick validation checklist:
@@ -97,8 +97,8 @@ This allows DDS/RTPS UDP ports `7400-7420` into WSL.
 The current real-hardware validation path verifies:
 
 ```text
-ESP32 -> ROS2: /step7_full_qos, RELIABLE
-ROS2 -> ESP32: /step7_full_qos_reply, RELIABLE
+ESP32 -> ROS2: /qos_eval, RELIABLE
+ROS2 -> ESP32: /qos_eval_reply, RELIABLE
 ```
 
 The seven QoS-related categories presented are:
@@ -125,7 +125,7 @@ The strict full-RELIABLE path has passed the current real-hardware preflight and
 ```text
 mros2/                    Core mROS2 and embeddedRTPS source
 platform/                 ESP32 WiFi and RTPS platform configuration
-workspace/step7_full_qos/ Real-hardware QoS validation firmware
+workspace/qos_eval/ Real-hardware QoS validation firmware
 scripts/validation/       Flashing, preflight, and WSL firewall helpers
 scripts/test/             Static QoS validation checks
 docs/validation/          Hardware validation instructions

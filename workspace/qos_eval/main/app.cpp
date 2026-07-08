@@ -276,11 +276,11 @@ extern "C" void app_main(void)
   sub_qos.liveliness_lease_duration = mros2::Duration::from_ms(3000);
 
   mros2::Publisher pub = node.create_publisher<std_msgs::msg::String>(
-      "step7_full_qos", pub_qos);
+      "qos_eval", pub_qos);
   mros2::Subscriber sub = node.create_subscription<std_msgs::msg::String>(
-      "step7_full_qos_reply", sub_qos, subscription_callback);
-  MROS2_INFO("  Publisher: /step7_full_qos");
-  MROS2_INFO("  Subscriber: /step7_full_qos_reply");
+      "qos_eval_reply", sub_qos, subscription_callback);
+  MROS2_INFO("  Publisher: /qos_eval");
+  MROS2_INFO("  Subscriber: /qos_eval_reply");
 
   MROS2_INFO("  Waiting for endpoint discovery/matching...");
   uint32_t wait_ms = 0;

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ROS2 echo reply node for step7 QoS latency measurement.
 
-Subscribes to /step7_full_qos, extracts timestamp, replies to
-/step7_full_qos_reply with "[ECHO] #N <timestamp_us>" format.
+Subscribes to /qos_eval, extracts timestamp, replies to
+/qos_eval_reply with "[ECHO] #N <timestamp_us>" format.
 """
 
 import rclpy
@@ -31,7 +31,7 @@ class EchoReplyNode(Node):
             durability=DurabilityPolicy.VOLATILE,
         )
         self.sub = self.create_subscription(
-            String, '/step7_full_qos', self.callback, sub_qos)
+            String, '/qos_eval', self.callback, sub_qos)
 
         # Publish echo reply with the ESP32 reply subscriber QoS.
         pub_qos = QoSProfile(
@@ -42,11 +42,11 @@ class EchoReplyNode(Node):
             deadline=Duration(seconds=0, nanoseconds=23_283_064),
             lifespan=Duration(seconds=2),
         )
-        self.pub = self.create_publisher(String, '/step7_full_qos_reply', pub_qos)
+        self.pub = self.create_publisher(String, '/qos_eval_reply', pub_qos)
 
         self.count = 0
         self.get_logger().info(
-            'Echo reply node started, listening on /step7_full_qos, reply=RELIABLE')
+            'Echo reply node started, listening on /qos_eval, reply=RELIABLE')
 
     def callback(self, msg):
         # Echo back the original message content (ESP32 measures RTT internally)

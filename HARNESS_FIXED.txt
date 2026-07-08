@@ -1,0 +1,8 @@
+## Harness Fixes Complete
+
+✅ All 5 bugs fixed
+✅ 废弃 data archived to 废弃_20260708/
+✅ E1 baseline preserved
+✅ app_lossy.cpp created for loss-tolerant experiments
+
+Ready to execute recovery path.

@@ -80,7 +80,7 @@ cd /home/your-user/mROS2-QoS
 Terminal B, ESP32 monitor:
 
 ```bash
-cd /home/your-user/mROS2-QoS/workspace/step7_full_qos
+cd /home/your-user/mROS2-QoS/workspace/qos_eval
 source ~/esp-idf/export.sh
 idf.py -p /dev/ttyUSB0 monitor
 ```
@@ -89,8 +89,8 @@ Terminal C, ROS2 QoS discovery:
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 topic info /step7_full_qos --verbose
-ros2 topic info /step7_full_qos_reply --verbose
+ros2 topic info /qos_eval --verbose
+ros2 topic info /qos_eval_reply --verbose
 ```
 
 ## Evidence Interpretation

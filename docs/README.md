@@ -21,7 +21,7 @@ docs/qos/QOS_EVIDENCE_MATRIX.md        Evidence matrix for the validated QoS cat
 
 ```text
 WSL2 ROS2 Humble <-> ESP32-S3 mROS2
-workspace/step7_full_qos
+workspace/qos_eval
 ```
 
 This project is a QoS extension prototype and hardware validation workflow, not a complete product-grade DDS QoS implementation.

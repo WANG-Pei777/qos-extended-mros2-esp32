@@ -1,5 +1,9 @@
 # RTPS Parameter Experiment: Wire-Level Effects of Heartbeat and SPDP Periods
 
+> **Naming note (2026-07-07):** the validation app and topics were renamed
+> `step7_full_qos` → `qos_eval` after these experiments; captures and names
+> below are historical.
+
 **Date:** 2026-07-06
 **Setup:** ESP32-S3 (mROS2 + embeddedRTPS, Wi-Fi) ⇄ ROS2 Humble echo host (WSL2 mirrored networking, FastDDS)
 **Capture point:** WSL `eth1` (`tshark -f "udp portrange 7400-7620"`), 60 s per run

@@ -49,7 +49,7 @@ echo "[verify] project=${PROJECT_ROOT}"
 echo "[verify] port=${PORT}"
 echo "[verify] capture_seconds=${CAPTURE_SECONDS}"
 
-pgrep -f "${PROJECT_ROOT}/workspace/step7_full_qos/echo_reply.py" | xargs -r kill || true
+pgrep -f "${PROJECT_ROOT}/workspace/qos_eval/echo_reply.py" | xargs -r kill || true
 pgrep -f "idf_monitor.py -p ${PORT}" | xargs -r kill || true
 pgrep -f "esp_idf_monitor -p ${PORT}" | xargs -r kill || true
 pgrep -f "idf.py -p ${PORT} monitor" | xargs -r kill || true
@@ -121,9 +121,9 @@ echo "[verify] capturing topic info"
       ros2 topic info "${topic}" --verbose --no-daemon --spin-time "${TOPIC_SPIN_SECONDS}" || true
     fi
   }
-  capture_topic /step7_full_qos
+  capture_topic /qos_eval
   echo
-  capture_topic /step7_full_qos_reply
+  capture_topic /qos_eval_reply
 } > "${TOPIC_LOG}" 2>&1
 
 echo
@@ -181,13 +181,13 @@ check "ESP32 DDS endpoint visible" "grep -q '_CREATED_BY_BARE_DDS_APP_' '${TOPIC
 
 echo
 echo "===== ROS2 Topic Info Evidence (standard CLI) ====="
-check "QoS 1 Reliability: ESP32->ROS2 RELIABLE visible" "topic_section_has '/step7_full_qos' 'Reliability: RELIABLE'"
-check "QoS 1 Reliability: ROS2->ESP32 ${EXPECT_REPLY_RELIABILITY} visible" "topic_section_has '/step7_full_qos_reply' 'Reliability: ${EXPECT_REPLY_RELIABILITY}'"
-check "QoS 2 Durability: VOLATILE visible on ESP32 and reply endpoints" "topic_section_has '/step7_full_qos' 'Durability: VOLATILE' && topic_section_has '/step7_full_qos_reply' 'Durability: VOLATILE'"
-check "QoS 3 History: ROS2 CLI exposes History field" "topic_section_has '/step7_full_qos' 'History [(]Depth[)]:' && topic_section_has '/step7_full_qos_reply' 'History [(]Depth[)]:'"
-check "QoS 4 Deadline: finite deadline visible on reply path" "topic_section_has '/step7_full_qos_reply' 'Deadline: 23283064 nanoseconds'"
-check "QoS 5 Lifespan: finite lifespan visible on reply path" "topic_section_has '/step7_full_qos_reply' 'Lifespan: 2000000000 nanoseconds'"
-check "QoS 6 Liveliness: AUTOMATIC visible on reply path" "topic_section_has '/step7_full_qos_reply' 'Liveliness: AUTOMATIC'"
+check "QoS 1 Reliability: ESP32->ROS2 RELIABLE visible" "topic_section_has '/qos_eval' 'Reliability: RELIABLE'"
+check "QoS 1 Reliability: ROS2->ESP32 ${EXPECT_REPLY_RELIABILITY} visible" "topic_section_has '/qos_eval_reply' 'Reliability: ${EXPECT_REPLY_RELIABILITY}'"
+check "QoS 2 Durability: VOLATILE visible on ESP32 and reply endpoints" "topic_section_has '/qos_eval' 'Durability: VOLATILE' && topic_section_has '/qos_eval_reply' 'Durability: VOLATILE'"
+check "QoS 3 History: ROS2 CLI exposes History field" "topic_section_has '/qos_eval' 'History [(]Depth[)]:' && topic_section_has '/qos_eval_reply' 'History [(]Depth[)]:'"
+check "QoS 4 Deadline: finite deadline visible on reply path" "topic_section_has '/qos_eval_reply' 'Deadline: 23283064 nanoseconds'"
+check "QoS 5 Lifespan: finite lifespan visible on reply path" "topic_section_has '/qos_eval_reply' 'Lifespan: 2000000000 nanoseconds'"
+check "QoS 6 Liveliness: AUTOMATIC visible on reply path" "topic_section_has '/qos_eval_reply' 'Liveliness: AUTOMATIC'"
 
 echo
 echo "===== ESP32 Behavior Evidence ====="

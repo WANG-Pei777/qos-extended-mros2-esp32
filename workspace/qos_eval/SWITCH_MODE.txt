@@ -1,0 +1,4 @@
+# To switch to loss-tolerant mode:
+# 1. sed -i 's/app.cpp/app_lossy.cpp/' main/CMakeLists.txt
+# 2. idf.py build flash
+# 3. Restore: sed -i 's/app_lossy.cpp/app.cpp/' main/CMakeLists.txt

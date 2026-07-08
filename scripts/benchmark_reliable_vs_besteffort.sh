@@ -13,7 +13,7 @@ echo ""
 # Test 1: Run step7 (RELIABLE) and capture metrics
 echo "[Test 1] RELIABLE + VOLATILE + KEEP_LAST(5)"
 echo "  Flashing step7..."
-cd "$PROJECT_ROOT/workspace/step7_full_qos"
+cd "$PROJECT_ROOT/workspace/qos_eval"
 source ~/esp-idf/export.sh >/dev/null 2>&1
 idf.py -p "$PORT" flash >/dev/null 2>&1
 

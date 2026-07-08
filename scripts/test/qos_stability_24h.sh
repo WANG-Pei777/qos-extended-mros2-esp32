@@ -17,7 +17,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT_DIR="${PROJECT_ROOT}/scripts"
 
 # Configuration
-STEP="${1:-step7_full_qos}"
+STEP="${1:-qos_eval}"
 DURATION_HOURS=24
 DURATION_SECONDS=$((DURATION_HOURS * 3600))
 SAMPLE_INTERVAL=60  # Sample every 60 seconds
@@ -47,8 +47,8 @@ fi
 # Determine which ROS2 echo script to use
 case "${STEP}" in
     step7*|step7)
-        ECHO_SCRIPT="${PROJECT_ROOT}/workspace/step7_full_qos/echo_reply.py"
-        STEP_DIR="step7_full_qos"
+        ECHO_SCRIPT="${PROJECT_ROOT}/workspace/qos_eval/echo_reply.py"
+        STEP_DIR="qos_eval"
         ;;
     step8b*|step8_transient*)
         ECHO_SCRIPT="${SCRIPT_DIR}/echo_transient_bidirectional.py"
