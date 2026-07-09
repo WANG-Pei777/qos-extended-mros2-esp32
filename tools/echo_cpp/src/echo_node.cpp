@@ -32,14 +32,11 @@ public:
         this->echo_callback(msg);
       });
 
-    // Publisher to /qos_eval_reply with specific QoS
-    auto reply_qos = qos_profile;
-    reply_qos.deadline(std::chrono::milliseconds(100));
-    reply_qos.lifespan(std::chrono::milliseconds(2000));
-
+    // Publisher to /qos_eval_reply - MUST match ESP32 QoS exactly
+    // F2 fix: Remove deadline/lifespan to avoid "incompatible QoS" warnings
     publisher_ = this->create_publisher<std_msgs::msg::String>(
       "/qos_eval_reply",
-      reply_qos);
+      qos_profile);
 
     RCLCPP_INFO(this->get_logger(),
                 "Echo node started, listening on /qos_eval, reply=RELIABLE");

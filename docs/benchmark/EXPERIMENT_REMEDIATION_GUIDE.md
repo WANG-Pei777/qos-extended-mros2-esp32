@@ -1,5 +1,44 @@
 # 实验整改指导（会话交接文档）
 
+> ## ⚠️ 二审结果（2026-07-09,必读）——首轮整改三个关键实验仍无效
+>
+> 逐日志验证的确凿结论:
+>
+> 1. **E3 修复前臂 0/30 = 工件**:host 日志显示监听 `/qos_eval`,而修复前固件发
+>    `/step7_full_qos` —— 正是本文 §3③ 警告的话题错配。0% 不是真实故障率(历史≈29%)。
+> 2. **E3 修复后臂 v2 仍违反协议**:30 个 run 有 30 条 "Echo reply node started"
+>    —— 主机每轮重启,依旧测的是冷发现(wait 中位 9.7s),幽灵场景未被测试。
+> 3. **E2 全部数据(0708+0709)实际丢包=0**,双重根因:
+>    a) `echo_cpp_lossy` 的回复发布者 QoS 与板端订阅者**不兼容**
+>       (日志明证:`requesting incompatible QoS ... DEADLINE_QOS_POLICY`)
+>       —— lossy 节点从未向板子发过任何消息;
+>    b) run_matrix 每 run 又起自己的 **0 丢包 Python host**,所有回声都是它发的。
+>    → 送达率恒 100%、RTT 非单调 = 纯 WiFi 噪声。
+> 4. **E1 upstream 臂无效**:串口 `RTT_FINAL TX=40 RX=0` —— host 听 `/qos_eval`,
+>    upstream bench 发 `/step10_best_effort`,又是话题错配;且该日板 IP 已变为
+>    10.84.233.x(**网络环境跨日漂移**,跨臂对比必须同日同网交错完成)。
+> 5. **`mros2qos_reliable_baseline.csv`(E1-mQoS 唯一有效臂)被整理时弄丢** ——
+>    在 `~/exp_data_backup_0708.tgz` 里,先恢复再动别的。
+>
+> ### v1.1 结构性修复(先改 harness,再采任何数据)
+>
+> - **F1** `run_matrix.sh` 增加 `HOST_MODE` 环境变量:`python`(默认)/`lossy:<rate>`
+>   /`external`(不起 host,由调用方管理,供 E3 常驻与 E1 异构臂使用)。
+>   彻底消灭"每 run 强启 Python host"这个三次肇事的根源。
+> - **F2** `tools/echo_cpp` 回复发布者补齐 QoS:deadline 必须 ≥ 板端订阅者请求值
+>   (板端请求 deadline≈23.28ms 一档;直接用 rclcpp::QoS 配 deadline 25ms + RELIABLE)。
+>   验收:板上能收到 lossy 节点回声(RX>0)且 0.5 档丢弃计数>0。
+> - **F3** 每个丢包条件开跑前强制**效力门禁**:run1 结束后断言
+>   `/tmp/e2_echo_*.log` 中 `Dropped: N (>0%)`,不满足立即中止该条件。
+> - **F4** E1 三臂必须**同日同网同会话交错**;每臂 host 用对应话题的脚本
+>   (upstream→`scripts/echo_best_effort.py`,worktree 前缀臂→worktree 自带 host)。
+> - **F5** 恢复 baseline CSV;`git rm` 误提交的 `CMakeLists.txt.backup`、
+>   根目录中文 txt;重打冻结 tag(改名实际在 654a18a 才入库,v0.3 指向不含改名的
+>   提交,论文引用 tag 会对不上)。
+>
+> 首轮 §3 任务清单其余内容仍有效;按 F1→F5 修完后重执行 ②③⑥。
+
+
 **生成**:2026-07-08 审批后 · **对象**:接手采集战役的 Claude 会话/人
 **上位文件**:`docs/benchmark/MASTER_EXPERIMENT_PLAN.md`(方案不变,本文只管执行整改)
 **先读**:项目记忆 `experiment-harness-audit`、`rtps-parameter-experiment`、

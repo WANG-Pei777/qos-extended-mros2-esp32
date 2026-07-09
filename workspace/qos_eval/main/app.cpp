@@ -270,8 +270,9 @@ extern "C" void app_main(void)
 
   mros2::QoSProfile sub_qos = pub_qos;
   sub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
-  sub_qos.deadline = mros2::Duration::from_ms(100);
-  sub_qos.lifespan = mros2::Duration::from_ms(2000);
+  // F2 fix: Remove deadline to match echo_cpp (avoid "incompatible QoS" warning)
+  // sub_qos.deadline = mros2::Duration::from_ms(100);
+  // sub_qos.lifespan = mros2::Duration::from_ms(2000);
   sub_qos.liveliness = mros2::LivelinessKind::AUTOMATIC;
   sub_qos.liveliness_lease_duration = mros2::Duration::from_ms(3000);
 
