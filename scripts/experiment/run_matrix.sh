@@ -57,13 +57,35 @@ for i in $(seq 1 ${N}); do
     pgrep -fx ".*/echo_node" | xargs -r kill -9 2>/dev/null || true
     sleep 1
 
-    # Start echo host (Python or C++ depending on system config)
-    # For now use existing qos_host.sh which uses Python
-    "${PROJECT_ROOT}/scripts/validation/qos_host.sh" all > "${HOST_LOG}" 2>&1 &
-    HOST_PID=$!
-    trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
+    # F1 fix: HOST_MODE controls echo host startup
+    # Modes: "python" (legacy), "cpp" (echo_cpp), "external" (user-managed)
+    HOST_MODE="${HOST_MODE:-python}"
+    HOST_PID=""
 
-    sleep 5
+    if [ "${HOST_MODE}" = "python" ]; then
+        # Legacy Python echo_reply.py
+        "${PROJECT_ROOT}/scripts/validation/qos_host.sh" all > "${HOST_LOG}" 2>&1 &
+        HOST_PID=$!
+        trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
+        sleep 5
+    elif [ "${HOST_MODE}" = "cpp" ]; then
+        # C++ echo_node (requires pre-built tools/echo_cpp)
+        set +u  # Allow unbound variables for ROS2/colcon setup
+        source /opt/ros/humble/setup.bash
+        source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
+        set -u
+        ros2 run echo_cpp echo_node --reliable > "${HOST_LOG}" 2>&1 &
+        HOST_PID=$!
+        trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
+        sleep 5
+    elif [ "${HOST_MODE}" = "external" ]; then
+        # User manages host externally (e.g., echo_node_lossy for E2)
+        echo "[host] Using external HOST (HOST_MODE=external)" > "${HOST_LOG}"
+        sleep 2
+    else
+        echo "Error: Unknown HOST_MODE='${HOST_MODE}'" >&2
+        exit 1
+    fi
 
     # Reset ESP32 and capture serial
     python3 - /dev/ttyUSB0 75 "${SERIAL_LOG}" <<'PY'
@@ -96,8 +118,10 @@ with open(log_path, "w", encoding="utf-8", errors="replace") as log:
 ser.close()
 PY
 
-    # Kill host
-    kill ${HOST_PID} 2>/dev/null || true
+    # Kill host (if managed by run_matrix)
+    if [ -n "${HOST_PID}" ]; then
+        kill ${HOST_PID} 2>/dev/null || true
+    fi
     wait ${HOST_PID} 2>/dev/null || true
 
     # Parse results
