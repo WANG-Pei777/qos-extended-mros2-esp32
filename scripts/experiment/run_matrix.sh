@@ -52,13 +52,15 @@ for i in $(seq 1 ${N}); do
     SERIAL_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${i}_serial.log"
     HOST_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${i}_host.log"
 
-    # Clean up any existing processes (exact match to avoid killing echo_node_lossy)
-    pgrep -fx "python3 .*echo_reply.py" | xargs -r kill -9 2>/dev/null || true
-    pgrep -fx ".*/echo_node" | xargs -r kill -9 2>/dev/null || true
-    sleep 1
+    # Clean up any existing processes (skip in external mode per F1)
+    if [ "${HOST_MODE}" != "external" ]; then
+        pgrep -fx "python3 .*echo_reply.py" | xargs -r kill -9 2>/dev/null || true
+        pgrep -fx ".*/echo_node" | xargs -r kill -9 2>/dev/null || true
+        sleep 1
+    fi
 
     # F1 fix: HOST_MODE controls echo host startup
-    # Modes: "python" (legacy), "cpp" (echo_cpp), "external" (user-managed)
+    # Modes: "python" (legacy), "cpp" (echo_cpp), "lossy:RATE" (echo_node_lossy), "external" (user-managed)
     HOST_MODE="${HOST_MODE:-python}"
     HOST_PID=""
 
@@ -75,6 +77,17 @@ for i in $(seq 1 ${N}); do
         source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
         set -u
         ros2 run echo_cpp echo_node --reliable > "${HOST_LOG}" 2>&1 &
+        HOST_PID=$!
+        trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
+        sleep 5
+    elif [[ "${HOST_MODE}" =~ ^lossy: ]]; then
+        # Lossy injection mode: echo_node_lossy with specified loss rate
+        LOSS_RATE="${HOST_MODE#lossy:}"
+        set +u
+        source /opt/ros/humble/setup.bash
+        source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
+        set -u
+        ros2 run echo_cpp echo_node_lossy --reliable --loss "${LOSS_RATE}" > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
         trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
         sleep 5
@@ -119,10 +132,11 @@ ser.close()
 PY
 
     # Kill host (if managed by run_matrix)
-    if [ -n "${HOST_PID}" ]; then
+    # F1 fix: external mode must not touch host process at all
+    if [ "${HOST_MODE}" != "external" ] && [ -n "${HOST_PID}" ]; then
         kill ${HOST_PID} 2>/dev/null || true
+        wait ${HOST_PID} 2>/dev/null || true
     fi
-    wait ${HOST_PID} 2>/dev/null || true
 
     # Parse results
     python3 - "${SERIAL_LOG}" "${OUTPUT_CSV}" "${i}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${COMMIT_HASH}" <<'PY'
