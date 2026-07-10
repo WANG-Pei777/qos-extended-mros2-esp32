@@ -32,11 +32,15 @@ public:
         this->echo_callback(msg);
       });
 
-    // Publisher to /qos_eval_reply - MUST match ESP32 QoS exactly
-    // F2 fix: Remove deadline/lifespan to avoid "incompatible QoS" warnings
+    // Publisher to /qos_eval_reply. The board's reply subscription requests
+    // deadline = 23283064 ns on the wire (mros2 SEDP encodes 100 ms that way);
+    // DDS requires offered <= requested, so offer exactly that value.
+    auto reply_qos = qos_profile;
+    reply_qos.deadline(std::chrono::nanoseconds(23283064));
+    reply_qos.lifespan(std::chrono::milliseconds(2000));
     publisher_ = this->create_publisher<std_msgs::msg::String>(
       "/qos_eval_reply",
-      qos_profile);
+      reply_qos);
 
     RCLCPP_INFO(this->get_logger(),
                 "Echo node started, listening on /qos_eval, reply=RELIABLE");

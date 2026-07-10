@@ -31,7 +31,7 @@ echo ""
 
 # Initialize CSV with header if not exists
 if [ ! -f "${OUTPUT_CSV}" ]; then
-    echo "run_id,timestamp,system,condition,tx_count,rx_count,rtt_min_us,rtt_avg_us,rtt_max_us,rtt_count,matched_pub,matched_sub,match_wait_ms,packets_dropped,rssi,channel,commit_hash" > "${OUTPUT_CSV}"
+    echo "run_id,timestamp,system,condition,tx_count,rx_count,rtt_min_us,rtt_avg_us,rtt_max_us,rtt_count,matched_pub,matched_sub,match_wait_ms,packets_dropped,rssi,channel,commit_hash,link_ping_avg_ms" > "${OUTPUT_CSV}"
 fi
 
 COMMIT_HASH=$(cd "${PROJECT_ROOT}" && git rev-parse HEAD)
@@ -53,9 +53,12 @@ for i in $(seq 1 ${N}); do
     HOST_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${i}_host.log"
 
     # Clean up any existing processes (skip in external mode per F1)
+    # B1 fix: -fx full-match patterns matched NOTHING against real cmdlines
+    # ("...echo_node_lossy --reliable --loss 0.50") -> cleanup was a no-op and
+    # hosts stacked across runs (the 9-zombie incident). Use path substrings.
     if [ "${HOST_MODE}" != "external" ]; then
-        pgrep -fx "python3 .*echo_reply.py" | xargs -r kill -9 2>/dev/null || true
-        pgrep -fx ".*/echo_node" | xargs -r kill -9 2>/dev/null || true
+        pkill -9 -f "echo_cpp/echo_node" 2>/dev/null || true
+        pkill -9 -f "echo_reply.py" 2>/dev/null || true
         sleep 1
     fi
 
@@ -76,7 +79,10 @@ for i in $(seq 1 ${N}); do
         source /opt/ros/humble/setup.bash
         source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
         set -u
-        ros2 run echo_cpp echo_node --reliable > "${HOST_LOG}" 2>&1 &
+        # B2 fix: launch the node binary DIRECTLY. `ros2 run` makes HOST_PID a
+        # python wrapper; killing the wrapper orphans the actual node.
+        "${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node" \
+            --reliable > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
         trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
         sleep 5
@@ -87,7 +93,9 @@ for i in $(seq 1 ${N}); do
         source /opt/ros/humble/setup.bash
         source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
         set -u
-        ros2 run echo_cpp echo_node_lossy --reliable --loss "${LOSS_RATE}" > "${HOST_LOG}" 2>&1 &
+        # B2 fix: direct binary launch (see cpp mode note above)
+        "${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node_lossy" \
+            --reliable --loss "${LOSS_RATE}" > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
         trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
         sleep 5
@@ -99,6 +107,15 @@ for i in $(seq 1 ${N}); do
         echo "Error: Unknown HOST_MODE='${HOST_MODE}'" >&2
         exit 1
     fi
+
+    # Link-health covariate (RSSI is unavailable on the frozen firmware):
+    # ICMP avg to the board right before the run. Detects transient network
+    # degradation windows (e.g. post-WSL-restart 1s+ DDS latency, 2026-07-10)
+    # so affected runs can be identified/covaried in analysis.
+    BOARD_IP="${BOARD_IP:-10.84.233.107}"
+    PING_AVG=$(ping -c 5 -i 0.2 -W 1 "${BOARD_IP}" 2>/dev/null \
+        | grep -oE 'rtt min/avg/max/mdev = [0-9.]+/[0-9.]+' \
+        | grep -oE '[0-9.]+$' || echo "")
 
     # Reset ESP32 and capture serial
     python3 - /dev/ttyUSB0 75 "${SERIAL_LOG}" <<'PY'
@@ -139,7 +156,7 @@ PY
     fi
 
     # Parse results
-    python3 - "${SERIAL_LOG}" "${OUTPUT_CSV}" "${i}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${COMMIT_HASH}" <<'PY'
+    python3 - "${SERIAL_LOG}" "${OUTPUT_CSV}" "${i}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${COMMIT_HASH}" "${PING_AVG}" <<'PY'
 import re
 import sys
 
@@ -150,6 +167,7 @@ timestamp = sys.argv[4]
 system = sys.argv[5]
 condition = sys.argv[6]
 commit_hash = sys.argv[7]
+link_ping_avg_ms = sys.argv[8] if len(sys.argv) > 8 else ""
 
 with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
     content = f.read()
@@ -207,7 +225,7 @@ with open(output_csv, 'a') as f:
     f.write(f"{run_id},{timestamp},{system},{condition},{tx_count},{rx_count},")
     f.write(f"{rtt_min:.0f},{rtt_avg:.0f},{rtt_max:.0f},{rtt_count},")
     f.write(f"{matched_pub},{matched_sub},{match_wait_ms},{packets_dropped},")
-    f.write(f"{rssi},{channel},{commit_hash}\n")
+    f.write(f"{rssi},{channel},{commit_hash},{link_ping_avg_ms}\n")
 
 print(f"[result] TX={tx_count} RX={rx_count} RTT={rtt_count} matched={matched_pub}&{matched_sub}")
 PY

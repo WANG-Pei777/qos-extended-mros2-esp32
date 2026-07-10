@@ -270,9 +270,14 @@ extern "C" void app_main(void)
 
   mros2::QoSProfile sub_qos = pub_qos;
   sub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
-  // F2 fix: Remove deadline to match echo_cpp (avoid "incompatible QoS" warning)
-  // sub_qos.deadline = mros2::Duration::from_ms(100);
-  // sub_qos.lifespan = mros2::Duration::from_ms(2000);
+  // Frozen validation QoS: finite deadline/lifespan on the reply subscription
+  // are paper evidence (visible in `ros2 topic info --verbose`). Hosts must
+  // OFFER a compatible deadline (<= the requested one on the wire) instead of
+  // this side dropping the request. Note: mros2's SEDP serializes 100 ms as
+  // 23283064 ns on the wire (nanosec written into the DDS fraction field), so
+  // host publishers offer exactly std::chrono::nanoseconds(23283064).
+  sub_qos.deadline = mros2::Duration::from_ms(100);
+  sub_qos.lifespan = mros2::Duration::from_ms(2000);
   sub_qos.liveliness = mros2::LivelinessKind::AUTOMATIC;
   sub_qos.liveliness_lease_duration = mros2::Duration::from_ms(3000);
 

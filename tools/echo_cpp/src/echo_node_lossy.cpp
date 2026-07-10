@@ -34,7 +34,10 @@ public:
       });
 
     auto reply_qos = qos_profile;
-    reply_qos.deadline(std::chrono::milliseconds(100));
+    // Board requests deadline = 23283064 ns on the wire (mros2 SEDP encoding
+    // of 100 ms); offered must be <= requested. 100 ms here was incompatible
+    // and silently prevented this node from ever delivering to the board.
+    reply_qos.deadline(std::chrono::nanoseconds(23283064));
     reply_qos.lifespan(std::chrono::milliseconds(2000));
 
     publisher_ = this->create_publisher<std_msgs::msg::String>("/qos_eval_reply", reply_qos);
