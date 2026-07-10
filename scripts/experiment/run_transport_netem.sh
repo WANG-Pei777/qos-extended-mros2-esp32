@@ -50,8 +50,8 @@ for command in tc tshark sha256sum; do
     }
 done
 
-if ! sudo -n true; then
-    echo "Error: passwordless sudo is required for automated netem setup." >&2
+if ! sudo -n tc qdisc show dev "${NETEM_INTERFACE}" >/dev/null; then
+    echo "Error: passwordless sudo for tc is required for automated netem setup." >&2
     echo "Run this script from an authorized lab shell, or configure a dedicated test interface." >&2
     exit 2
 fi
