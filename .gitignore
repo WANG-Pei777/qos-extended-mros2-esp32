@@ -70,3 +70,8 @@ htmlcov/
 
 # Claude project files
 .claude/
+
+# colcon build products (echo_cpp host tool)
+tools/echo_cpp/build/
+tools/echo_cpp/install/
+tools/echo_cpp/log/

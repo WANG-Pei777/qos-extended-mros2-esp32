@@ -113,9 +113,23 @@ for i in $(seq 1 ${N}); do
     # degradation windows (e.g. post-WSL-restart 1s+ DDS latency, 2026-07-10)
     # so affected runs can be identified/covaried in analysis.
     BOARD_IP="${BOARD_IP:-10.84.233.107}"
-    PING_AVG=$(ping -c 5 -i 0.2 -W 1 "${BOARD_IP}" 2>/dev/null \
-        | grep -oE 'rtt min/avg/max/mdev = [0-9.]+/[0-9.]+' \
-        | grep -oE '[0-9.]+$' || echo "")
+    # Admission gate: the link oscillates between healthy (~15 ms) and 1 s+
+    # windows on a minutes scale (observed 2026-07-10). Wait out bad windows
+    # instead of collecting garbage. LINK_GATE_MS=0 disables the gate.
+    LINK_GATE_MS="${LINK_GATE_MS:-100}"
+    PING_AVG=""
+    for attempt in $(seq 1 10); do
+        PING_AVG=$(ping -c 5 -i 0.2 -W 1 "${BOARD_IP}" 2>/dev/null \
+            | grep -oE 'rtt min/avg/max/mdev = [0-9.]+/[0-9.]+' \
+            | grep -oE '[0-9.]+$' || echo "")
+        if [ "${LINK_GATE_MS}" = "0" ] || \
+           { [ -n "${PING_AVG}" ] && \
+             [ "$(echo "${PING_AVG} < ${LINK_GATE_MS}" | bc -l 2>/dev/null || echo 0)" = "1" ]; }; then
+            break
+        fi
+        echo "[link-gate] ping_avg=${PING_AVG:-timeout} ms >= ${LINK_GATE_MS} ms, waiting 30 s (${attempt}/10)"
+        sleep 30
+    done
 
     # Reset ESP32 and capture serial
     python3 - /dev/ttyUSB0 75 "${SERIAL_LOG}" <<'PY'
