@@ -19,7 +19,7 @@ echo ""
 # This script handles Part 2: Post-fix
 
 echo "[E3] Waiting for pre-fix test to complete..."
-echo "[E3] Check /home/wsde-47/mROS2-QoS/results/experiments/20260708/mros2qos_reset_storm_prefix.csv"
+echo "[E3] Check ${PROJECT_ROOT}/results/experiments/<date>/mros2qos_reset_storm_prefix.csv"
 echo ""
 echo "[E3] When complete, run Part 2 manually:"
 echo ""

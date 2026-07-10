@@ -10,6 +10,7 @@
  */
 
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <random>
 #include <string>
@@ -45,6 +46,14 @@ public:
     RCLCPP_INFO(this->get_logger(),
                 "Echo node (lossy) started, listening on /qos_eval, loss_rate=%.1f%%",
                 loss_rate_ * 100.0);
+  }
+
+  void report_injection_summary() const
+  {
+    const size_t attempted = echo_count_ + drop_count_;
+    RCLCPP_INFO(this->get_logger(),
+                "INJECTION_SUMMARY attempted=%zu echoed=%zu dropped=%zu configured_rate=%.6f",
+                attempted, echo_count_, drop_count_, loss_rate_);
   }
 
 private:
@@ -93,9 +102,23 @@ int main(int argc, char * argv[])
       use_reliable = true;
     } else if (arg == "--loss" || arg == "-l") {
       if (i + 1 < argc) {
-        loss_rate = std::stod(argv[++i]);
+        try {
+          loss_rate = std::stod(argv[++i]);
+        } catch (const std::exception & exc) {
+          RCLCPP_ERROR(rclcpp::get_logger("echo_cpp_lossy"),
+                       "Invalid loss rate: %s", exc.what());
+          rclcpp::shutdown();
+          return 2;
+        }
       }
     }
+  }
+
+  if (!std::isfinite(loss_rate) || loss_rate < 0.0 || loss_rate > 1.0) {
+    RCLCPP_ERROR(rclcpp::get_logger("echo_cpp_lossy"),
+                 "Loss rate must be a finite value in [0, 1]");
+    rclcpp::shutdown();
+    return 2;
   }
 
   auto qos_profile = rclcpp::QoS(10)
@@ -107,6 +130,7 @@ int main(int argc, char * argv[])
   auto node = std::make_shared<EchoNodeLossy>(qos_profile, loss_rate);
 
   rclcpp::spin(node);
+  node->report_injection_summary();
   rclcpp::shutdown();
 
   return 0;

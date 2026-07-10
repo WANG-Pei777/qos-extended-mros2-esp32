@@ -19,7 +19,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <atomic>
+#include <cstdlib>
 #include <cstring>
+#include <limits>
 
 // Most ESP32-S3 dev boards place the built-in addressable RGB LED on GPIO48.
 // Clear it at boot so the hardware validation workflow is not distracted by the bright white LED.
@@ -164,7 +166,12 @@ public:
 
 struct PerfStats {
   uint32_t tx_count = 0;
-  uint32_t rx_count = 0;
+  uint32_t rx_raw_count = 0;
+  uint32_t rx_unique_count = 0;
+  uint32_t rx_duplicate_count = 0;
+  uint32_t rx_malformed_count = 0;
+  uint32_t rx_pre_measurement_count = 0;
+  uint32_t rx_tracker_overflow_count = 0;
   uint64_t first_tx_us = 0;
   uint64_t last_tx_us = 0;
   uint64_t first_rx_us = 0;
@@ -175,11 +182,32 @@ struct PerfStats {
   uint32_t latency_samples = 0;
 };
 
+class SequenceTracker {
+  static constexpr uint32_t kCapacity = 128;
+  uint32_t values_[kCapacity] = {};
+  uint32_t count_ = 0;
+
+public:
+  enum class Result { unique, duplicate, overflow };
+
+  Result record(uint32_t sequence) {
+    for (uint32_t i = 0; i < count_; ++i) {
+      if (values_[i] == sequence) return Result::duplicate;
+    }
+    if (count_ >= kCapacity) return Result::overflow;
+    values_[count_++] = sequence;
+    return Result::unique;
+  }
+};
+
 static DeadlineManager deadline_mgr(100, 200);  // 100ms deadline, check every 200 msgs (~200ms)
 static LifespanManager lifespan_mgr(2000);       // 2s lifespan
 static ResourceLimitsManager resource_mgr(30, 12288);
 static PerfStats perf;
 static std::atomic<uint32_t> reply_count{0};
+static SequenceTracker reply_sequences;
+static std::atomic<uint32_t> measurement_sequence_start{
+    std::numeric_limits<uint32_t>::max()};
 
 // ============================================================
 // Callbacks
@@ -188,15 +216,56 @@ static std::atomic<uint32_t> reply_count{0};
 void subscription_callback(std_msgs::msg::String *msg)
 {
   uint64_t now = esp_timer_get_time();
+  const uint32_t measurement_start = measurement_sequence_start.load();
+  const bool measurement_active =
+      measurement_start != std::numeric_limits<uint32_t>::max();
 
-  // Track receive stats
-  if (perf.first_rx_us == 0) perf.first_rx_us = now;
-  perf.last_rx_us = now;
-  perf.rx_count++;
+  if (measurement_active) perf.rx_raw_count++;
+
+  const char *sequence_found = strstr(msg->data.c_str(), "#");
+  if (!sequence_found) {
+    if (measurement_active) perf.rx_malformed_count++;
+    deadline_mgr.onMessageReceived();
+    return;
+  }
+
+  char *sequence_end = nullptr;
+  unsigned long parsed_sequence = strtoul(sequence_found + 1, &sequence_end, 10);
+  if (sequence_end == sequence_found + 1 ||
+      parsed_sequence > std::numeric_limits<uint32_t>::max()) {
+    if (measurement_active) perf.rx_malformed_count++;
+    deadline_mgr.onMessageReceived();
+    return;
+  }
+
+  SequenceTracker::Result sequence_result =
+      reply_sequences.record(static_cast<uint32_t>(parsed_sequence));
+  if (sequence_result == SequenceTracker::Result::duplicate) {
+    if (measurement_active) perf.rx_duplicate_count++;
+    deadline_mgr.onMessageReceived();
+    return;
+  }
+  if (sequence_result == SequenceTracker::Result::overflow) {
+    if (measurement_active) perf.rx_tracker_overflow_count++;
+    deadline_mgr.onMessageReceived();
+    return;
+  }
+
+  if (measurement_active && parsed_sequence < measurement_start) {
+    perf.rx_pre_measurement_count++;
+    deadline_mgr.onMessageReceived();
+    return;
+  }
+
+  if (measurement_active) {
+    if (perf.first_rx_us == 0) perf.first_rx_us = now;
+    perf.last_rx_us = now;
+    perf.rx_unique_count++;
+  }
 
   // Extract embedded timestamp from echo reply: "... T:<tx_us>"
   const char *ts_found = strstr(msg->data.c_str(), "T:");
-  if (ts_found) {
+  if (measurement_active && ts_found) {
     uint64_t msg_us = strtoull(ts_found + 2, nullptr, 10);
 
     // Latency: RTT measured on ESP32 clock
@@ -316,10 +385,11 @@ extern "C" void app_main(void)
 	    MROS2_INFO("\n=== Warm-up: Confirm Bidirectional Echo Path ===");
     uint32_t warmup_start_replies = reply_count.load();
     const uint32_t warmup_target_replies = warmup_start_replies + 3;
-    for (int i = 0; i < 40 && reply_count.load() < warmup_target_replies; i++) {
+	    for (int i = 0; i < 40 && reply_count.load() < warmup_target_replies; i++) {
 	      auto msg = std_msgs::msg::String();
 	      uint64_t tx_us = esp_timer_get_time();
-	      msg.data = "[WARMUP] #" + std::to_string(i) + " T:" + std::to_string(tx_us);
+	      uint32_t sequence = msg_count.fetch_add(1);
+	      msg.data = "[WARMUP] #" + std::to_string(sequence) + " T:" + std::to_string(tx_us);
 	      pub_ptr->publish(msg);
 	      deadline_mgr.onMessagePublished();
 	      delay_ms(500);
@@ -332,6 +402,7 @@ extern "C" void app_main(void)
       phase = 6;
       osDelay(osWaitForever);
     }
+	    measurement_sequence_start.store(msg_count.load());
 	    perf = PerfStats{};
 	    reply_count = 0;
 
@@ -341,7 +412,8 @@ extern "C" void app_main(void)
 	    for (int i = 0; i < 20; i++) {
       auto msg = std_msgs::msg::String();
       uint64_t tx_us = esp_timer_get_time();
-      msg.data = "[BASELINE] #" + std::to_string(msg_count.load()) + " T:" + std::to_string(tx_us);
+      uint32_t sequence = msg_count.fetch_add(1);
+      msg.data = "[BASELINE] #" + std::to_string(sequence) + " T:" + std::to_string(tx_us);
 
       if (resource_mgr.canAccept(msg.data.length() + 64)) {
         pub_ptr->publish(msg);
@@ -354,7 +426,6 @@ extern "C" void app_main(void)
       } else {
         resource_mgr.recordRejected();
       }
-      msg_count++;
       delay_ms(100);  // 10Hz
     }
 	    MROS2_INFO("  TX done. Waiting for replies...");
@@ -371,14 +442,14 @@ extern "C" void app_main(void)
 
     // Resume publishing
     MROS2_INFO("  Resuming publish...");
-    for (int i = 0; i < 10; i++) {
+	    for (int i = 0; i < 10; i++) {
       auto msg = std_msgs::msg::String();
       uint64_t tx_us = esp_timer_get_time();
-      msg.data = "[DEADLINE_RESUME] #" + std::to_string(msg_count.load()) + " T:" + std::to_string(tx_us);
+      uint32_t sequence = msg_count.fetch_add(1);
+      msg.data = "[DEADLINE_RESUME] #" + std::to_string(sequence) + " T:" + std::to_string(tx_us);
       pub_ptr->publish(msg);
       deadline_mgr.onMessagePublished();
       perf.tx_count++;
-      msg_count++;
       delay_ms(100);
     }
     delay_ms(1000);
@@ -440,11 +511,12 @@ extern "C" void app_main(void)
     phase = 4;
     MROS2_INFO("\n=== Phase D: Liveliness Lease Verification ===");
     bool reader_alive_now = mros2::subscriber_writer_alive();
-    bool writer_activity_observed = perf.rx_count > 0;
+    bool writer_activity_observed = perf.rx_raw_count > 0;
     MROS2_INFO("  Reader heartbeat state: %s (lease=3000ms)",
                reader_alive_now ? "ALIVE" : "not asserted");
-    MROS2_INFO("  Writer activity observed by ESP32 RX: %s (RX=%u)",
-               writer_activity_observed ? "YES" : "NO", perf.rx_count);
+    MROS2_INFO("  Writer activity observed by ESP32 RX: %s (raw=%u, unique=%u)",
+               writer_activity_observed ? "YES" : "NO",
+               perf.rx_raw_count, perf.rx_unique_count);
     delay_ms(100);
     bool reader_alive_after_wait = mros2::subscriber_writer_alive();
     MROS2_INFO("  Reader heartbeat state after 100ms: %s",
@@ -461,10 +533,11 @@ extern "C" void app_main(void)
     phase = 5;
     MROS2_INFO("\n=== Phase E: Resource Limits Test ===");
     uint32_t before_rejected = resource_mgr.getRejected();
-    for (int i = 0; i < 40; i++) {
+	    for (int i = 0; i < 40; i++) {
       auto msg = std_msgs::msg::String();
       uint64_t tx_us = esp_timer_get_time();
-      msg.data = "[RESOURCE] #" + std::to_string(msg_count.load()) + " T:" + std::to_string(tx_us);
+      uint32_t sequence = msg_count.fetch_add(1);
+      msg.data = "[RESOURCE] #" + std::to_string(sequence) + " T:" + std::to_string(tx_us);
       if (resource_mgr.canAccept(msg.data.length() + 64)) {
         pub_ptr->publish(msg);
         resource_mgr.recordAccepted(msg.data.length() + 64);
@@ -472,7 +545,6 @@ extern "C" void app_main(void)
       } else {
         resource_mgr.recordRejected();
       }
-      msg_count++;
       delay_ms(50);
     }
     uint32_t new_rejected = resource_mgr.getRejected() - before_rejected;
@@ -532,7 +604,12 @@ extern "C" void app_main(void)
                mros2::subscriber_liveliness_recovered_count());
     MROS2_INFO("Performance:");
     MROS2_INFO("  TX: %u msgs", perf.tx_count);
-    MROS2_INFO("  RX: %u msgs", perf.rx_count);
+    MROS2_INFO("  RX: %u msgs", perf.rx_unique_count);
+    MROS2_INFO("  RX raw observations: %u", perf.rx_raw_count);
+    MROS2_INFO("  RX duplicate replies: %u", perf.rx_duplicate_count);
+    MROS2_INFO("  RX malformed replies: %u", perf.rx_malformed_count);
+    MROS2_INFO("  RX pre-measurement replies: %u", perf.rx_pre_measurement_count);
+    MROS2_INFO("  RX sequence tracker overflow: %u", perf.rx_tracker_overflow_count);
     if (perf.first_tx_us > 0 && perf.last_tx_us > perf.first_tx_us) {
       float tx_duration_s = (perf.last_tx_us - perf.first_tx_us) / 1000000.0f;
       MROS2_INFO("  TX throughput: %.1f msg/s", perf.tx_count / tx_duration_s);

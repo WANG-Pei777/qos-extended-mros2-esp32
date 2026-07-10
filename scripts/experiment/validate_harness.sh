@@ -28,22 +28,22 @@ else
     echo "[FAIL] CSV has ${LINES} lines (expected 2)"
 fi
 
-# Test 2: pkill exact match
+# Test 2: managed host cleanup pattern
 echo ""
-echo "[Test 2] pkill exact match..."
-python3 /home/wsde-47/mROS2-QoS/workspace/qos_eval/echo_reply.py &
+echo "[Test 2] managed host cleanup..."
+python3 "${PROJECT_ROOT}/workspace/qos_eval/echo_reply.py" &
 ECHO_PID=$!
 sleep 1
 
-# Should NOT kill echo_reply.py when looking for echo_node
-pgrep -fx ".*/echo_node" | xargs -r kill -9 2>/dev/null || true
+# ROUND4 cleanup uses path/script substrings, not fragile full-command matches.
+pkill -f "echo_reply.py" 2>/dev/null || true
 sleep 1
 
 if kill -0 ${ECHO_PID} 2>/dev/null; then
-    echo "[PASS] echo_reply.py survived (exact match works)"
+    echo "[FAIL] echo_reply.py survived cleanup"
     kill ${ECHO_PID}
 else
-    echo "[FAIL] echo_reply.py was killed"
+    echo "[PASS] echo_reply.py cleanup works"
 fi
 
 # Test 3: Flash size parsing

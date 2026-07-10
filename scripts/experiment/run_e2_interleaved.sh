@@ -16,12 +16,6 @@ echo "Each round: 5 runs per condition"
 echo "Total: 30 runs per condition (交错采样缓解时间偏差)"
 echo ""
 
-# Source ROS2 and echo
-set +u
-source /opt/ros/humble/setup.bash
-source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
-set -u
-
 # 5 loss conditions
 CONDITIONS=(
     "reliable_0pct:0.0"
@@ -46,29 +40,13 @@ for ROUND in {1..6}; do
         echo ""
         echo "[Round ${ROUND}] ${LABEL} (loss=${LOSS})"
 
-        # Clean any existing echo processes
-        pkill -9 -f "echo_node_lossy" 2>/dev/null || true
-        sleep 2
-
-        # Start echo node for this condition
-        ros2 run echo_cpp echo_node_lossy --reliable --loss ${LOSS} > /tmp/e2_${LABEL}_r${ROUND}.log 2>&1 &
-        ECHO_PID=$!
-        sleep 5
-
         # Run 5 iterations for this condition in this round
-        "${SCRIPT_DIR}/run_matrix.sh" "mros2qos" "${LABEL}" 5
-
-        # Kill echo node explicitly by PID
-        kill ${ECHO_PID} 2>/dev/null || true
-        wait ${ECHO_PID} 2>/dev/null || true
+        HOST_MODE="lossy:${LOSS}" "${SCRIPT_DIR}/run_matrix.sh" "mros2qos" "${LABEL}" 5
         sleep 2
     done
 
     echo "[Round ${ROUND}] Complete"
 done
-
-# Final cleanup
-pkill -9 -f "echo_node_lossy" 2>/dev/null || true
 
 END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))

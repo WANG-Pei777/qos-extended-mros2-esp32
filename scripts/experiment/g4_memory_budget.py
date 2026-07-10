@@ -4,6 +4,8 @@ G4: Memory Budget - Quick test for parameter upper bounds
 Modifies config.h, builds, flashes, and extracts free heap from serial output
 """
 import re
+import os
+import shlex
 import subprocess
 import sys
 import time
@@ -11,7 +13,8 @@ from pathlib import Path
 
 import serial
 
-PROJECT_ROOT = Path("/home/wsde-47/mROS2-QoS")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ESP_IDF_EXPORT = Path(os.environ.get("ESP_IDF_EXPORT", Path.home() / "esp-idf/export.sh"))
 CONFIG_H = PROJECT_ROOT / "platform/rtps/config.h"
 PORT = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyUSB0"
 RESULTS_CSV = PROJECT_ROOT / "results/g4_memory_budget.csv"
@@ -45,7 +48,11 @@ def modify_config(param_pattern: str, new_value: int) -> bool:
 def build_and_flash() -> bool:
     """Build and flash firmware"""
     # Source ESP-IDF and build
-    build_cmd = f"cd {PROJECT_ROOT} && source /home/wsde-47/esp-idf/export.sh > /dev/null 2>&1 && idf.py build"
+    build_cmd = (
+        f"cd {shlex.quote(str(PROJECT_ROOT))} && "
+        f"source {shlex.quote(str(ESP_IDF_EXPORT))} > /dev/null 2>&1 && "
+        "idf.py build"
+    )
 
     result = subprocess.run(build_cmd, shell=True, executable='/bin/bash',
                           capture_output=True, text=True)
@@ -57,7 +64,11 @@ def build_and_flash() -> bool:
     print("[OK] Build successful")
 
     # Flash
-    flash_cmd = f"cd {PROJECT_ROOT} && source /home/wsde-47/esp-idf/export.sh > /dev/null 2>&1 && idf.py -p {PORT} flash"
+    flash_cmd = (
+        f"cd {shlex.quote(str(PROJECT_ROOT))} && "
+        f"source {shlex.quote(str(ESP_IDF_EXPORT))} > /dev/null 2>&1 && "
+        f"idf.py -p {shlex.quote(PORT)} flash"
+    )
 
     result = subprocess.run(flash_cmd, shell=True, executable='/bin/bash',
                           capture_output=True, text=True)

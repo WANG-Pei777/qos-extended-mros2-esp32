@@ -13,10 +13,66 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SYSTEM="${1:?Usage: $0 <system> <condition> <N>}"
 CONDITION="${2:?Missing condition}"
 N="${3:-30}"
+HOST_MODE="${HOST_MODE:-python}"
+QOS_MODE="${QOS_MODE:-reliable}"
+FIRMWARE_MODE="${FIRMWARE_MODE:-}"
+FIRMWARE_BINARY="${FIRMWARE_BINARY:-}"
+FORMAL_RUN="${FORMAL_RUN:-0}"
+INJECTION_LAYER="${INJECTION_LAYER:-}"
 
 DATE=$(date +%Y%m%d)
 RESULTS_DIR="${PROJECT_ROOT}/results/experiments/${DATE}"
 OUTPUT_CSV="${RESULTS_DIR}/${SYSTEM}_${CONDITION}.csv"
+MANIFEST_PATH="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_manifest.json"
+CSV_HEADER="run_id,timestamp,system,condition,formal_run,qos_mode,firmware_mode,injection_layer,host_mode,host_loss_rate,host_injection_attempted,host_injection_dropped,host_injection_observed_rate,tx_count,rx_count,rx_raw_count,rx_duplicate_count,rx_malformed_count,rx_pre_measurement_count,rx_tracker_overflow_count,rtt_min_us,rtt_avg_us,rtt_max_us,rtt_count,matched_pub,matched_sub,match_wait_ms,board_packets_dropped,rssi,channel,manifest_sha256,commit_hash,worktree_state,worktree_fingerprint,link_ping_avg_ms"
+
+case "${QOS_MODE}" in
+    reliable)
+        HOST_QOS_FLAG="--reliable"
+        ;;
+    best_effort)
+        HOST_QOS_FLAG="--best-effort"
+        ;;
+    *)
+        echo "Error: QOS_MODE must be reliable or best_effort (got '${QOS_MODE}')" >&2
+        exit 2
+        ;;
+esac
+
+case "${FORMAL_RUN}" in
+    0|1)
+        ;;
+    *)
+        echo "Error: FORMAL_RUN must be 0 or 1" >&2
+        exit 2
+        ;;
+esac
+
+if [ -z "${FIRMWARE_MODE}" ]; then
+    if [ "${FORMAL_RUN}" = "1" ]; then
+        echo "Error: FORMAL_RUN=1 requires explicit FIRMWARE_MODE provenance" >&2
+        exit 2
+    fi
+    FIRMWARE_MODE="unspecified"
+fi
+
+if [ -z "${FIRMWARE_BINARY}" ]; then
+    if [ "${FORMAL_RUN}" = "1" ]; then
+        echo "Error: FORMAL_RUN=1 requires FIRMWARE_BINARY for binary provenance" >&2
+        exit 2
+    fi
+    FIRMWARE_BINARY=""
+elif [ ! -f "${FIRMWARE_BINARY}" ]; then
+    echo "Error: FIRMWARE_BINARY does not exist: ${FIRMWARE_BINARY}" >&2
+    exit 2
+fi
+
+if [ -z "${INJECTION_LAYER}" ]; then
+    case "${HOST_MODE}" in
+        lossy:*) INJECTION_LAYER="application_reply" ;;
+        *) INJECTION_LAYER="none" ;;
+    esac
+fi
 
 mkdir -p "${RESULTS_DIR}"
 
@@ -27,14 +83,44 @@ echo "System: ${SYSTEM}"
 echo "Condition: ${CONDITION}"
 echo "Repetitions: ${N}"
 echo "Output: ${OUTPUT_CSV}"
+echo "QoS: host=${QOS_MODE}, firmware=${FIRMWARE_MODE}, host_mode=${HOST_MODE}, injection=${INJECTION_LAYER}"
 echo ""
 
-# Initialize CSV with header if not exists
+# Never append a new protocol row to a legacy CSV.
 if [ ! -f "${OUTPUT_CSV}" ]; then
-    echo "run_id,timestamp,system,condition,tx_count,rx_count,rtt_min_us,rtt_avg_us,rtt_max_us,rtt_count,matched_pub,matched_sub,match_wait_ms,packets_dropped,rssi,channel,commit_hash,link_ping_avg_ms" > "${OUTPUT_CSV}"
+    echo "${CSV_HEADER}" > "${OUTPUT_CSV}"
+elif [ "$(head -n 1 "${OUTPUT_CSV}")" != "${CSV_HEADER}" ]; then
+    echo "Error: ${OUTPUT_CSV} uses a legacy or incompatible CSV schema." >&2
+    echo "Choose a new condition label; do not mix ROUND4 rows with prior data." >&2
+    exit 2
 fi
 
 COMMIT_HASH=$(cd "${PROJECT_ROOT}" && git rev-parse HEAD)
+if [ -n "$(cd "${PROJECT_ROOT}" && git status --porcelain=v1)" ]; then
+    WORKTREE_STATE="dirty"
+    WORKTREE_FINGERPRINT=$(cd "${PROJECT_ROOT}" && {
+        git diff --binary
+        git diff --cached --binary
+        git status --porcelain=v1
+        git ls-files --others --exclude-standard | while IFS= read -r path; do
+            sha256sum "${path}"
+        done
+    } | sha256sum | awk '{print $1}')
+else
+    WORKTREE_STATE="clean"
+    WORKTREE_FINGERPRINT="clean"
+fi
+
+if [ "${FORMAL_RUN}" = "1" ] && [ "${WORKTREE_STATE}" != "clean" ]; then
+    echo "Error: FORMAL_RUN=1 requires a clean git worktree; current state is dirty." >&2
+    echo "Commit the validated harness or run a non-formal pilot with FORMAL_RUN=0." >&2
+    exit 2
+fi
+
+EXISTING_RUNS="$(($(wc -l < "${OUTPUT_CSV}") - 1))"
+if [ "${EXISTING_RUNS}" -lt 0 ]; then
+    EXISTING_RUNS=0
+fi
 
 # Source ROS2
 set +u
@@ -44,13 +130,50 @@ set -u
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}"
 export ROS_LOCALHOST_ONLY="${ROS_LOCALHOST_ONLY:-0}"
 
+BOARD_IP="${BOARD_IP:-10.84.233.107}"
+LINK_GATE_MS="${LINK_GATE_MS:-100}"
+if [ "${LINK_GATE_MS}" = "0" ]; then
+    echo "[link-gate] LINK_GATE_MS=0 is prohibited by ROUND4; aborting" >&2
+    exit 2
+fi
+
+HOST_BINARY=""
+case "${HOST_MODE}" in
+    cpp)
+        HOST_BINARY="${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node"
+        ;;
+    lossy:*)
+        HOST_BINARY="${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node_lossy"
+        ;;
+esac
+
+MANIFEST_SHA=$(python3 "${SCRIPT_DIR}/write_manifest.py" \
+    --path "${MANIFEST_PATH}" \
+    --project-root "${PROJECT_ROOT}" \
+    --system "${SYSTEM}" \
+    --condition "${CONDITION}" \
+    --formal-run "${FORMAL_RUN}" \
+    --qos-mode "${QOS_MODE}" \
+    --firmware-mode "${FIRMWARE_MODE}" \
+    --host-mode "${HOST_MODE}" \
+    --injection-layer "${INJECTION_LAYER}" \
+    --board-ip "${BOARD_IP}" \
+    --link-gate-ms "${LINK_GATE_MS}" \
+    --commit-hash "${COMMIT_HASH}" \
+    --worktree-state "${WORKTREE_STATE}" \
+    --worktree-fingerprint "${WORKTREE_FINGERPRINT}" \
+    --host-binary "${HOST_BINARY}" \
+    --firmware-binary "${FIRMWARE_BINARY}")
+echo "Manifest: ${MANIFEST_PATH} (${MANIFEST_SHA})"
+
 for i in $(seq 1 ${N}); do
     echo ""
-    echo "--- Run ${i}/${N} ---"
+    RUN_ID="$((EXISTING_RUNS + i))"
+    echo "--- Run ${i}/${N} (run_id=${RUN_ID}) ---"
     TIMESTAMP=$(date +%s)
 
-    SERIAL_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${i}_serial.log"
-    HOST_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${i}_host.log"
+    SERIAL_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${RUN_ID}_serial.log"
+    HOST_LOG="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_run${RUN_ID}_host.log"
 
     # Clean up any existing processes (skip in external mode per F1)
     # B1 fix: -fx full-match patterns matched NOTHING against real cmdlines
@@ -62,12 +185,15 @@ for i in $(seq 1 ${N}); do
         sleep 1
     fi
 
-    # F1 fix: HOST_MODE controls echo host startup
+    # F1 fix: HOST_MODE controls echo host startup.
     # Modes: "python" (legacy), "cpp" (echo_cpp), "lossy:RATE" (echo_node_lossy), "external" (user-managed)
-    HOST_MODE="${HOST_MODE:-python}"
     HOST_PID=""
 
     if [ "${HOST_MODE}" = "python" ]; then
+        if [ "${QOS_MODE}" != "reliable" ]; then
+            echo "Error: HOST_MODE=python does not expose a BEST_EFFORT QoS setting" >&2
+            exit 2
+        fi
         # Legacy Python echo_reply.py
         "${PROJECT_ROOT}/scripts/validation/qos_host.sh" all > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
@@ -82,20 +208,25 @@ for i in $(seq 1 ${N}); do
         # B2 fix: launch the node binary DIRECTLY. `ros2 run` makes HOST_PID a
         # python wrapper; killing the wrapper orphans the actual node.
         "${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node" \
-            --reliable > "${HOST_LOG}" 2>&1 &
+            "${HOST_QOS_FLAG}" > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
         trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
         sleep 5
     elif [[ "${HOST_MODE}" =~ ^lossy: ]]; then
         # Lossy injection mode: echo_node_lossy with specified loss rate
         LOSS_RATE="${HOST_MODE#lossy:}"
+        if ! [[ "${LOSS_RATE}" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || \
+           ! awk -v rate="${LOSS_RATE}" 'BEGIN { exit !(rate >= 0 && rate <= 1) }'; then
+            echo "Error: lossy HOST_MODE requires a rate in [0, 1] (got '${LOSS_RATE}')" >&2
+            exit 2
+        fi
         set +u
         source /opt/ros/humble/setup.bash
         source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
         set -u
         # B2 fix: direct binary launch (see cpp mode note above)
         "${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node_lossy" \
-            --reliable --loss "${LOSS_RATE}" > "${HOST_LOG}" 2>&1 &
+            "${HOST_QOS_FLAG}" --loss "${LOSS_RATE}" > "${HOST_LOG}" 2>&1 &
         HOST_PID=$!
         trap "kill ${HOST_PID} 2>/dev/null || true" EXIT
         sleep 5
@@ -112,24 +243,26 @@ for i in $(seq 1 ${N}); do
     # ICMP avg to the board right before the run. Detects transient network
     # degradation windows (e.g. post-WSL-restart 1s+ DDS latency, 2026-07-10)
     # so affected runs can be identified/covaried in analysis.
-    BOARD_IP="${BOARD_IP:-10.84.233.107}"
     # Admission gate: the link oscillates between healthy (~15 ms) and 1 s+
     # windows on a minutes scale (observed 2026-07-10). Wait out bad windows
-    # instead of collecting garbage. LINK_GATE_MS=0 disables the gate.
-    LINK_GATE_MS="${LINK_GATE_MS:-100}"
+    # instead of collecting garbage.
     PING_AVG=""
     for attempt in $(seq 1 10); do
         PING_AVG=$(ping -c 5 -i 0.2 -W 1 "${BOARD_IP}" 2>/dev/null \
             | grep -oE 'rtt min/avg/max/mdev = [0-9.]+/[0-9.]+' \
             | grep -oE '[0-9.]+$' || echo "")
-        if [ "${LINK_GATE_MS}" = "0" ] || \
-           { [ -n "${PING_AVG}" ] && \
-             [ "$(echo "${PING_AVG} < ${LINK_GATE_MS}" | bc -l 2>/dev/null || echo 0)" = "1" ]; }; then
+        if { [ -n "${PING_AVG}" ] && \
+             awk -v avg="${PING_AVG}" -v limit="${LINK_GATE_MS}" 'BEGIN { exit !(avg < limit) }'; }; then
             break
         fi
         echo "[link-gate] ping_avg=${PING_AVG:-timeout} ms >= ${LINK_GATE_MS} ms, waiting 30 s (${attempt}/10)"
         sleep 30
     done
+    if [ -z "${PING_AVG}" ] || \
+       ! awk -v avg="${PING_AVG}" -v limit="${LINK_GATE_MS}" 'BEGIN { exit !(avg < limit) }'; then
+        echo "[link-gate] failed: ping_avg=${PING_AVG:-timeout} ms >= ${LINK_GATE_MS} ms; aborting" >&2
+        exit 2
+    fi
 
     # Reset ESP32 and capture serial
     python3 - /dev/ttyUSB0 75 "${SERIAL_LOG}" <<'PY'
@@ -169,82 +302,116 @@ PY
         wait ${HOST_PID} 2>/dev/null || true
     fi
 
-    # Parse results
-    python3 - "${SERIAL_LOG}" "${OUTPUT_CSV}" "${i}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${COMMIT_HASH}" "${PING_AVG}" <<'PY'
+    # Parse board and host evidence into one schema-bound row.
+    python3 - "${SERIAL_LOG}" "${HOST_LOG}" "${OUTPUT_CSV}" "${RUN_ID}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${FORMAL_RUN}" "${QOS_MODE}" "${FIRMWARE_MODE}" "${INJECTION_LAYER}" "${HOST_MODE}" "${MANIFEST_SHA}" "${COMMIT_HASH}" "${WORKTREE_STATE}" "${WORKTREE_FINGERPRINT}" "${PING_AVG}" <<'PY'
+import csv
 import re
 import sys
 
-log_path = sys.argv[1]
-output_csv = sys.argv[2]
-run_id = sys.argv[3]
-timestamp = sys.argv[4]
-system = sys.argv[5]
-condition = sys.argv[6]
-commit_hash = sys.argv[7]
-link_ping_avg_ms = sys.argv[8] if len(sys.argv) > 8 else ""
+serial_log_path = sys.argv[1]
+host_log_path = sys.argv[2]
+output_csv = sys.argv[3]
+run_id = sys.argv[4]
+timestamp = sys.argv[5]
+system = sys.argv[6]
+condition = sys.argv[7]
+formal_run = sys.argv[8]
+qos_mode = sys.argv[9]
+firmware_mode = sys.argv[10]
+injection_layer = sys.argv[11]
+host_mode = sys.argv[12]
+manifest_sha256 = sys.argv[13]
+commit_hash = sys.argv[14]
+worktree_state = sys.argv[15]
+worktree_fingerprint = sys.argv[16]
+link_ping_avg_ms = sys.argv[17]
 
-with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
-    content = f.read()
+with open(serial_log_path, encoding='utf-8', errors='replace') as f:
+    serial_content = f.read()
 
-# Extract metrics
-tx_match = re.search(r'TX:\s+(\d+)\s+msgs', content)
-rx_match = re.search(r'RX:\s+(\d+)\s+msgs', content)
+try:
+    with open(host_log_path, encoding='utf-8', errors='replace') as f:
+        host_content = f.read()
+except FileNotFoundError:
+    host_content = ""
 
-tx_count = int(tx_match.group(1)) if tx_match else 0
-rx_count = int(rx_match.group(1)) if rx_match else 0
 
-# RTT values - parse from Latency section (microseconds)
-# Format: "Min: 12345 us", "Max: 23456 us", "Avg: 15678 us"
-min_match = re.search(r'Min:\s+(\d+)\s+us', content)
-max_match = re.search(r'Max:\s+(\d+)\s+us', content)
-avg_match = re.search(r'Avg:\s+(\d+)\s+us', content)
+def final_int(pattern, content):
+    matches = re.findall(pattern, content)
+    return int(matches[-1]) if matches else 0
 
-rtt_min = float(min_match.group(1)) if min_match else 0
-rtt_max = float(max_match.group(1)) if max_match else 0
-rtt_avg = float(avg_match.group(1)) if avg_match else 0
 
-# Also check sample count
-sample_match = re.search(r'Samples:\s+(\d+)', content)
-rtt_count = int(sample_match.group(1)) if sample_match else 0
+tx_count = final_int(r'TX:\s+(\d+)\s+msgs', serial_content)
+rx_count = final_int(r'RX:\s+(\d+)\s+msgs', serial_content)
+rx_raw_count = final_int(r'RX raw observations:\s+(\d+)', serial_content)
+rx_duplicate_count = final_int(r'RX duplicate replies:\s+(\d+)', serial_content)
+rx_malformed_count = final_int(r'RX malformed replies:\s+(\d+)', serial_content)
+rx_pre_measurement_count = final_int(r'RX pre-measurement replies:\s+(\d+)', serial_content)
+rx_tracker_overflow_count = final_int(r'RX sequence tracker overflow:\s+(\d+)', serial_content)
+rtt_min = float(final_int(r'Min:\s+(\d+)\s+us', serial_content))
+rtt_max = float(final_int(r'Max:\s+(\d+)\s+us', serial_content))
+rtt_avg = float(final_int(r'Avg:\s+(\d+)\s+us', serial_content))
+rtt_count = final_int(r'Samples:\s+(\d+)', serial_content)
 
-# Old format for backward compatibility
+# Old format for backward compatibility with board serial output.
 if rtt_min == 0 and rtt_max == 0:
-    rtt_matches = re.findall(r'RTT:\s+([\d.]+)\s+ms', content)
-    rtt_us = [float(x) * 1000 for x in rtt_matches]
+    rtt_us = [float(value) * 1000 for value in re.findall(r'RTT:\s+([\d.]+)\s+ms', serial_content)]
     if rtt_us:
         rtt_min = min(rtt_us)
         rtt_max = max(rtt_us)
         rtt_avg = sum(rtt_us) / len(rtt_us)
         rtt_count = len(rtt_us)
 
-# rtt_min, rtt_max, rtt_avg, rtt_count already set above
+matched_pub = int('publisher matched with remote subscriber' in serial_content)
+matched_sub = int('subscriber matched with remote publisher' in serial_content)
+match_wait_ms = final_int(r'Match state.*?wait=(\d+)ms', serial_content)
+board_packets_dropped = final_int(r'Packets Dropped:\s+(\d+)', serial_content)
 
-# Matching
-matched_pub = 1 if 'publisher matched with remote subscriber' in content else 0
-matched_sub = 1 if 'subscriber matched with remote publisher' in content else 0
+host_loss_rate = ""
+host_injection_attempted = ""
+host_injection_dropped = ""
+host_injection_observed_rate = ""
+if host_mode.startswith('lossy:'):
+    host_loss_rate = host_mode.split(':', 1)[1]
+    summaries = re.findall(
+        r'INJECTION_SUMMARY attempted=(\d+) echoed=(\d+) dropped=(\d+) configured_rate=([0-9.]+)',
+        host_content,
+    )
+    progress = re.findall(r'Echoed:\s*(\d+),\s*Dropped:\s*(\d+)', host_content)
+    if summaries:
+        attempted, _echoed, dropped, _configured_rate = summaries[-1]
+        host_injection_attempted = int(attempted)
+        host_injection_dropped = int(dropped)
+    elif progress:
+        echoed, dropped = progress[-1]
+        host_injection_attempted = int(echoed) + int(dropped)
+        host_injection_dropped = int(dropped)
 
-match_wait_match = re.search(r'Match state.*?wait=(\d+)ms', content)
-match_wait_ms = int(match_wait_match.group(1)) if match_wait_match else 0
+    if host_injection_attempted:
+        host_injection_observed_rate = f"{host_injection_dropped / host_injection_attempted:.6f}"
 
-# Packet drops
-drop_match = re.search(r'Packets Dropped:\s+(\d+)', content)
-packets_dropped = int(drop_match.group(1)) if drop_match else 0
+with open(output_csv, 'a', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow([
+        run_id, timestamp, system, condition, formal_run, qos_mode, firmware_mode,
+        injection_layer, host_mode, host_loss_rate, host_injection_attempted, host_injection_dropped,
+        host_injection_observed_rate, tx_count, rx_count, rx_raw_count, rx_duplicate_count,
+        rx_malformed_count, rx_pre_measurement_count, rx_tracker_overflow_count, f"{rtt_min:.0f}",
+        f"{rtt_avg:.0f}", f"{rtt_max:.0f}", rtt_count, matched_pub, matched_sub,
+        match_wait_ms, board_packets_dropped, "", "", manifest_sha256, commit_hash, worktree_state,
+        worktree_fingerprint, link_ping_avg_ms,
+    ])
 
-# RSSI/Channel (would need to capture from WiFi status)
-rssi = ""
-channel = ""
-
-# Append to CSV
-with open(output_csv, 'a') as f:
-    f.write(f"{run_id},{timestamp},{system},{condition},{tx_count},{rx_count},")
-    f.write(f"{rtt_min:.0f},{rtt_avg:.0f},{rtt_max:.0f},{rtt_count},")
-    f.write(f"{matched_pub},{matched_sub},{match_wait_ms},{packets_dropped},")
-    f.write(f"{rssi},{channel},{commit_hash},{link_ping_avg_ms}\n")
-
-print(f"[result] TX={tx_count} RX={rx_count} RTT={rtt_count} matched={matched_pub}&{matched_sub}")
+injection = "n/a"
+if host_injection_attempted != "":
+    injection = f"{host_injection_dropped}/{host_injection_attempted}"
+print(
+    f"[result] TX={tx_count} RX={rx_count} RTT={rtt_count} "
+    f"matched={matched_pub}&{matched_sub} injection={injection}"
+)
 PY
 
-    echo "[run ${i}] Complete"
+    echo "[run ${RUN_ID}] Complete"
 done
 
 echo ""

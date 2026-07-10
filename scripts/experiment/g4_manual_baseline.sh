@@ -5,10 +5,12 @@
 #
 set -euo pipefail
 
-PROJECT_ROOT="/home/wsde-47/mROS2-QoS"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 WORKSPACE="${PROJECT_ROOT}/workspace/qos_eval"
 CONFIG_H="${PROJECT_ROOT}/platform/rtps/config.h"
 PORT="${1:-/dev/ttyUSB0}"
+ESP_IDF_EXPORT="${ESP_IDF_EXPORT:-${HOME}/esp-idf/export.sh}"
 
 echo "========================================="
 echo "G4: Memory Budget - Manual Baseline"
@@ -21,7 +23,7 @@ cp "${CONFIG_H}" "${CONFIG_H}.g4_manual_backup"
 # Get current baseline (default values)
 echo "Reading baseline from serial output..."
 cd "${WORKSPACE}"
-source /home/wsde-47/esp-idf/export.sh > /dev/null 2>&1
+source "${ESP_IDF_EXPORT}" > /dev/null 2>&1
 
 # Build current config
 echo "[baseline] Building with default config..."

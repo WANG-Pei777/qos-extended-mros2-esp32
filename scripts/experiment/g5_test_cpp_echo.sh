@@ -9,15 +9,24 @@ echo "G5: Testing C++ Echo Node"
 echo "========================================="
 echo ""
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+ECHO_NODE="${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node"
+
 # Source workspaces
 set +u
 source /opt/ros/humble/setup.bash
-source /home/wsde-47/mROS2-QoS/tools/echo_cpp/install/setup.bash
+source "${PROJECT_ROOT}/tools/echo_cpp/install/setup.bash"
 set -u
+
+if [ ! -x "${ECHO_NODE}" ]; then
+    echo "[FAIL] Missing executable: ${ECHO_NODE}"
+    exit 1
+fi
 
 # Start C++ echo node
 echo "[test] Starting C++ echo node..."
-ros2 run echo_cpp echo_node --reliable &
+"${ECHO_NODE}" --reliable &
 ECHO_PID=$!
 
 sleep 3
@@ -31,8 +40,8 @@ fi
 echo "[OK] Echo node started successfully (PID: ${ECHO_PID})"
 echo ""
 echo "Usage for experiments:"
-echo "  ros2 run echo_cpp echo_node --reliable"
-echo "  ros2 run echo_cpp echo_node --best-effort"
+echo "  ${ECHO_NODE} --reliable"
+echo "  ${ECHO_NODE} --best-effort"
 echo ""
 
 # Kill test node
