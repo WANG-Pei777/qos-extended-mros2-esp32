@@ -112,7 +112,7 @@ def main():
                 "hostname": socket.gethostname(),
                 "platform": platform.platform(),
                 "python": sys.version.split()[0],
-                "ros2_version": command_output("ros2", "--version"),
+                "ros_distro": os.environ.get("ROS_DISTRO", "unavailable"),
                 "idf_version": command_output("idf.py", "--version") if shutil.which("idf.py") else "unavailable",
                 "network_interfaces": command_output("ip", "-brief", "address"),
             },
