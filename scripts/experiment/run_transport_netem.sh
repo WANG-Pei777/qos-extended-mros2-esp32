@@ -56,10 +56,15 @@ if ! sudo -n tc qdisc show dev "${NETEM_INTERFACE}" >/dev/null; then
     exit 2
 fi
 
-DATE=$(date +%Y%m%d)
+DATE="${RESULTS_DATE:-$(date +%Y%m%d)}"
 STAMP=$(date +%Y%m%d_%H%M%S)
 LOSS_LABEL="${LOSS_PERCENT//./p}pct"
-CONDITION="round4_transport_${QOS_MODE}_${LOSS_LABEL}"
+CONDITION_SUFFIX="${CONDITION_SUFFIX:-}"
+if [ -n "${CONDITION_SUFFIX}" ] && ! [[ "${CONDITION_SUFFIX}" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "Error: CONDITION_SUFFIX must contain only letters, digits, dot, dash, or underscore" >&2
+    exit 2
+fi
+CONDITION="round4_transport_${QOS_MODE}_${LOSS_LABEL}${CONDITION_SUFFIX:+_${CONDITION_SUFFIX}}"
 PCAP_DIR="${PROJECT_ROOT}/results/experiments/pcaps"
 PCAP_PATH="${PCAP_DIR}/${STAMP}_${CONDITION}_host_to_board.pcapng"
 CAPTURE_LOG="${PCAP_PATH}.log"
