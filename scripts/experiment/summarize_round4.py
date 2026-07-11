@@ -67,6 +67,7 @@ def summarize(qos, loss_pct, rows, samples, rng):
     rtt = rtt_values(rows)
     delivery_ci = bootstrap_ci(delivery, samples, rng)
     rtt_ci = bootstrap_ci(rtt, samples, rng)
+    sorted_rtt = sorted(rtt)
     return {
         "qos": qos,
         "loss_pct": loss_pct,
@@ -78,6 +79,7 @@ def summarize(qos, loss_pct, rows, samples, rng):
         "delivery_mean_ci_high_pct": delivery_ci[1],
         "rtt_mean_ms": statistics.mean(rtt),
         "rtt_median_ms": statistics.median(rtt),
+        "rtt_run_mean_p95_ms": percentile(sorted_rtt, 0.95),
         "rtt_sd_ms": statistics.stdev(rtt) if len(rtt) > 1 else 0.0,
         "rtt_mean_ci_low_ms": rtt_ci[0],
         "rtt_mean_ci_high_ms": rtt_ci[1],
@@ -169,12 +171,12 @@ def main():
         f"Bootstrap: percentile 95% CI; {args.bootstrap_samples} resamples; seed {args.seed}.",
         "Source CSVs must pass `validate_round4.py` before interpretation.", "",
         "## Conditions", "",
-        "| QoS | Loss (%) | N | Delivery mean % [95% CI] | Delivery median % | Delivery SD % | RTT mean ms [95% CI] | RTT median ms | RTT SD ms |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| QoS | Loss (%) | N | Delivery mean % [95% CI] | Delivery median % | Delivery SD % | RTT mean ms [95% CI] | RTT median ms | RTT run-mean p95 ms | RTT SD ms |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in condition_rows:
         lines.append(
-            "| {qos} | {loss_pct} | {n} | {delivery_mean_pct:.3f} [{delivery_mean_ci_low_pct:.3f}, {delivery_mean_ci_high_pct:.3f}] | {delivery_median_pct:.3f} | {delivery_sd_pct:.3f} | {rtt_mean_ms:.3f} [{rtt_mean_ci_low_ms:.3f}, {rtt_mean_ci_high_ms:.3f}] | {rtt_median_ms:.3f} | {rtt_sd_ms:.3f} |".format(**row)
+            "| {qos} | {loss_pct} | {n} | {delivery_mean_pct:.3f} [{delivery_mean_ci_low_pct:.3f}, {delivery_mean_ci_high_pct:.3f}] | {delivery_median_pct:.3f} | {delivery_sd_pct:.3f} | {rtt_mean_ms:.3f} [{rtt_mean_ci_low_ms:.3f}, {rtt_mean_ci_high_ms:.3f}] | {rtt_median_ms:.3f} | {rtt_run_mean_p95_ms:.3f} | {rtt_sd_ms:.3f} |".format(**row)
         )
     lines.extend(["", "## QoS Effects (RELIABLE minus BEST_EFFORT)", ""])
     if effects:
