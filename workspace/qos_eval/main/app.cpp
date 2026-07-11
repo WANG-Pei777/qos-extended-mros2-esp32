@@ -209,6 +209,16 @@ static SequenceTracker reply_sequences;
 static std::atomic<uint32_t> measurement_sequence_start{
     std::numeric_limits<uint32_t>::max()};
 
+#ifdef MROS2_QOS_BEST_EFFORT
+static constexpr rtps::ReliabilityKind_t kExperimentReliability =
+    rtps::ReliabilityKind_t::BEST_EFFORT;
+static constexpr const char *kExperimentReliabilityName = "BEST_EFFORT";
+#else
+static constexpr rtps::ReliabilityKind_t kExperimentReliability =
+    rtps::ReliabilityKind_t::RELIABLE;
+static constexpr const char *kExperimentReliabilityName = "RELIABLE";
+#endif
+
 // ============================================================
 // Callbacks
 // ============================================================
@@ -306,7 +316,8 @@ extern "C" void app_main(void)
   printf("  Step 7: Full QoS Deep Verification\n");
   printf("============================================\n");
   printf("QoS Policies:\n");
-  printf("  1. Reliability: RELIABLE uplink, RELIABLE reply path\n");
+  printf("  1. Reliability: %s uplink, %s reply path\n",
+         kExperimentReliabilityName, kExperimentReliabilityName);
   printf("  2. Durability : VOLATILE\n");
   printf("  3. History    : KEEP_LAST(5)\n");
   printf("  4. Deadline   : %ums\n", deadline_mgr.getDeadlineMs());
@@ -330,7 +341,7 @@ extern "C" void app_main(void)
 
   /* Phase 2: Create endpoints */
   mros2::QoSProfile pub_qos;
-  pub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
+  pub_qos.reliability = kExperimentReliability;
   pub_qos.durability = rtps::DurabilityKind_t::VOLATILE;
   pub_qos.history = mros2::HistoryKind::KEEP_LAST;
   pub_qos.depth = 5;
@@ -338,7 +349,7 @@ extern "C" void app_main(void)
   pub_qos.max_bytes = resource_mgr.getMaxBytes();
 
   mros2::QoSProfile sub_qos = pub_qos;
-  sub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
+  sub_qos.reliability = kExperimentReliability;
   // Frozen validation QoS: finite deadline/lifespan on the reply subscription
   // are paper evidence (visible in `ros2 topic info --verbose`). Hosts must
   // OFFER a compatible deadline (<= the requested one on the wire) instead of
