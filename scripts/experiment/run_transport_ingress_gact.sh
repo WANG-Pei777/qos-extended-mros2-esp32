@@ -96,19 +96,21 @@ tshark -i "${CAPTURE_INTERFACE}" \
 CAPTURE_PID=$!
 sleep 2
 
-DROP_VALUE=$(awk -v loss="${LOSS_PERCENT}" 'BEGIN { printf "%d", loss * 100 }')
-if [ "${DROP_VALUE}" -gt 0 ]; then
+DROP_PERCENT=$(awk -v loss="${LOSS_PERCENT}" 'BEGIN { printf "%d", loss }')
+if [ "${DROP_PERCENT}" -gt 0 ]; then
     sudo tc qdisc del dev "${NETEM_INTERFACE}" ingress 2>/dev/null || true
     sudo tc qdisc add dev "${NETEM_INTERFACE}" ingress
     INGRESS_ACTIVE=1
-    if [ "${DROP_VALUE}" -ge 10000 ]; then
+    if [ "${DROP_PERCENT}" -ge 100 ]; then
         sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
             src_ip "${BOARD_IP}" ip_proto udp \
             action gact drop
     else
+        # gact random uses an inverse-probability denominator: 10 ~= 10%.
+        DROP_DENOMINATOR=$(awk -v loss="${LOSS_PERCENT}" 'BEGIN { printf "%d", (100.0 / loss) + 0.5 }')
         sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
             src_ip "${BOARD_IP}" ip_proto udp \
-            action gact pass random netrand drop "${DROP_VALUE}"
+            action gact pass random netrand drop "${DROP_DENOMINATOR}"
     fi
 fi
 
