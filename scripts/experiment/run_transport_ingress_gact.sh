@@ -101,9 +101,15 @@ if [ "${DROP_VALUE}" -gt 0 ]; then
     sudo tc qdisc del dev "${NETEM_INTERFACE}" ingress 2>/dev/null || true
     sudo tc qdisc add dev "${NETEM_INTERFACE}" ingress
     INGRESS_ACTIVE=1
-    sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
-        src_ip "${BOARD_IP}" ip_proto udp \
-        action gact pass random netrand drop "${DROP_VALUE}"
+    if [ "${DROP_VALUE}" -ge 10000 ]; then
+        sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
+            src_ip "${BOARD_IP}" ip_proto udp \
+            action gact drop
+    else
+        sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
+            src_ip "${BOARD_IP}" ip_proto udp \
+            action gact pass random netrand drop "${DROP_VALUE}"
+    fi
 fi
 
 FORMAL_RUN=1 \
