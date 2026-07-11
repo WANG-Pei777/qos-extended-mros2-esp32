@@ -84,3 +84,9 @@ The paper artifact contains source commit(s), build instructions, firmware
 ledger, raw CSV/log/pcap archives, manifests with checksums, analysis scripts,
 figure-generation scripts, and a claim-to-evidence table. A fresh environment
 must be able to regenerate every table and figure from the raw archive.
+
+Run `validate_round4.py` on every formal CSV before analysis. Then run
+`summarize_round4.py` over the validated CSVs to generate the condition table
+and QoS effect-size table. The summarizer uses a recorded seed and percentile
+bootstrap confidence intervals, so it must be invoked with the same resample
+count and seed for a release build.
