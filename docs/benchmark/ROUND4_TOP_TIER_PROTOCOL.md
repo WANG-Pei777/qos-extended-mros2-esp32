@@ -86,7 +86,9 @@ figure-generation scripts, and a claim-to-evidence table. A fresh environment
 must be able to regenerate every table and figure from the raw archive.
 
 Run `validate_round4.py` on every formal CSV before analysis. Then run
-`summarize_round4.py` over the validated CSVs to generate the condition table
-and QoS effect-size table. The summarizer uses a recorded seed and percentile
-bootstrap confidence intervals, so it must be invoked with the same resample
-count and seed for a release build.
+`audit_round4_result_set.py` over the full transport matrix to verify row
+counts, shared source commit, board IP, host binary, and per-QoS firmware
+hashes. Finally run `summarize_round4.py` over the audited CSVs to generate
+the condition table and QoS effect-size table. The summarizer uses a recorded
+seed and percentile bootstrap confidence intervals, so it must be invoked with
+the same resample count and seed for a release build.
