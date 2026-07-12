@@ -570,6 +570,8 @@ extern "C" void app_main(void)
     phase = 6;
     MROS2_INFO("  Waiting for ROS2 echo replies...");
     delay_ms(7000);
+    measurement_sequence_start.store(std::numeric_limits<uint32_t>::max());
+    PerfStats perf_snapshot = perf;
     MROS2_INFO("\n============================================");
     MROS2_INFO("  DEEP VERIFICATION RESULTS");
     MROS2_INFO("============================================");
@@ -616,23 +618,23 @@ extern "C" void app_main(void)
     MROS2_INFO("  Reader liveliness recovered count: %u",
                mros2::subscriber_liveliness_recovered_count());
     MROS2_INFO("Performance:");
-    MROS2_INFO("  TX: %u msgs", perf.tx_count);
-    MROS2_INFO("  RX: %u msgs", perf.rx_unique_count);
-    MROS2_INFO("  RX raw observations: %u", perf.rx_raw_count);
-    MROS2_INFO("  RX duplicate replies: %u", perf.rx_duplicate_count);
-    MROS2_INFO("  RX malformed replies: %u", perf.rx_malformed_count);
-    MROS2_INFO("  RX pre-measurement replies: %u", perf.rx_pre_measurement_count);
-    MROS2_INFO("  RX sequence tracker overflow: %u", perf.rx_tracker_overflow_count);
-    if (perf.first_tx_us > 0 && perf.last_tx_us > perf.first_tx_us) {
-      float tx_duration_s = (perf.last_tx_us - perf.first_tx_us) / 1000000.0f;
-      MROS2_INFO("  TX throughput: %.1f msg/s", perf.tx_count / tx_duration_s);
+    MROS2_INFO("  TX: %u msgs", perf_snapshot.tx_count);
+    MROS2_INFO("  RX: %u msgs", perf_snapshot.rx_unique_count);
+    MROS2_INFO("  RX raw observations: %u", perf_snapshot.rx_raw_count);
+    MROS2_INFO("  RX duplicate replies: %u", perf_snapshot.rx_duplicate_count);
+    MROS2_INFO("  RX malformed replies: %u", perf_snapshot.rx_malformed_count);
+    MROS2_INFO("  RX pre-measurement replies: %u", perf_snapshot.rx_pre_measurement_count);
+    MROS2_INFO("  RX sequence tracker overflow: %u", perf_snapshot.rx_tracker_overflow_count);
+    if (perf_snapshot.first_tx_us > 0 && perf_snapshot.last_tx_us > perf_snapshot.first_tx_us) {
+      float tx_duration_s = (perf_snapshot.last_tx_us - perf_snapshot.first_tx_us) / 1000000.0f;
+      MROS2_INFO("  TX throughput: %.1f msg/s", perf_snapshot.tx_count / tx_duration_s);
     }
-    if (perf.latency_samples > 0) {
+    if (perf_snapshot.latency_samples > 0) {
       MROS2_INFO("  Latency (round-trip):");
-      MROS2_INFO("    Min: %u us", perf.min_latency_us);
-      MROS2_INFO("    Max: %u us", perf.max_latency_us);
-      MROS2_INFO("    Avg: %u us", (uint32_t)(perf.total_latency_us / perf.latency_samples));
-      MROS2_INFO("    Samples: %u", perf.latency_samples);
+      MROS2_INFO("    Min: %u us", perf_snapshot.min_latency_us);
+      MROS2_INFO("    Max: %u us", perf_snapshot.max_latency_us);
+      MROS2_INFO("    Avg: %u us", (uint32_t)(perf_snapshot.total_latency_us / perf_snapshot.latency_samples));
+      MROS2_INFO("    Samples: %u", perf_snapshot.latency_samples);
     } else {
       MROS2_INFO("  Latency: no echo replies received");
     }
