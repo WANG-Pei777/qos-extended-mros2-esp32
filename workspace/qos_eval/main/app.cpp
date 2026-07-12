@@ -285,6 +285,8 @@ void subscription_callback(std_msgs::msg::String *msg)
       if (rtt_us > perf.max_latency_us) perf.max_latency_us = rtt_us;
       perf.total_latency_us += rtt_us;
       perf.latency_samples++;
+      MROS2_INFO("RTT_SAMPLE seq=%lu rtt_us=%u",
+                 parsed_sequence, rtt_us);
     }
 
     // Lifespan check

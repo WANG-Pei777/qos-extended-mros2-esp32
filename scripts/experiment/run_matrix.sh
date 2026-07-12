@@ -23,8 +23,10 @@ INJECTION_LAYER="${INJECTION_LAYER:-}"
 DATE="${RESULTS_DATE:-$(date +%Y%m%d)}"
 RESULTS_DIR="${PROJECT_ROOT}/results/experiments/${DATE}"
 OUTPUT_CSV="${RESULTS_DIR}/${SYSTEM}_${CONDITION}.csv"
+RTT_SAMPLES_CSV="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_rtt_samples.csv"
 MANIFEST_PATH="${RESULTS_DIR}/${SYSTEM}_${CONDITION}_manifest.json"
 CSV_HEADER="run_id,timestamp,system,condition,formal_run,qos_mode,firmware_mode,injection_layer,host_mode,host_loss_rate,host_injection_attempted,host_injection_dropped,host_injection_observed_rate,tx_count,rx_count,rx_raw_count,rx_duplicate_count,rx_malformed_count,rx_pre_measurement_count,rx_tracker_overflow_count,rtt_min_us,rtt_avg_us,rtt_max_us,rtt_count,matched_pub,matched_sub,match_wait_ms,board_packets_dropped,rssi,channel,manifest_sha256,commit_hash,worktree_state,worktree_fingerprint,link_ping_avg_ms"
+RTT_SAMPLES_HEADER="run_id,timestamp,system,condition,qos_mode,firmware_mode,injection_layer,sequence,rtt_us,manifest_sha256,commit_hash"
 
 case "${QOS_MODE}" in
     reliable)
@@ -92,6 +94,14 @@ if [ ! -f "${OUTPUT_CSV}" ]; then
 elif [ "$(head -n 1 "${OUTPUT_CSV}")" != "${CSV_HEADER}" ]; then
     echo "Error: ${OUTPUT_CSV} uses a legacy or incompatible CSV schema." >&2
     echo "Choose a new condition label; do not mix ROUND4 rows with prior data." >&2
+    exit 2
+fi
+
+if [ ! -f "${RTT_SAMPLES_CSV}" ]; then
+    echo "${RTT_SAMPLES_HEADER}" > "${RTT_SAMPLES_CSV}"
+elif [ "$(head -n 1 "${RTT_SAMPLES_CSV}")" != "${RTT_SAMPLES_HEADER}" ]; then
+    echo "Error: ${RTT_SAMPLES_CSV} uses an incompatible RTT sample schema." >&2
+    echo "Choose a new condition label; do not mix per-message RTT rows with prior data." >&2
     exit 2
 fi
 
@@ -303,7 +313,7 @@ PY
     fi
 
     # Parse board and host evidence into one schema-bound row.
-    python3 - "${SERIAL_LOG}" "${HOST_LOG}" "${OUTPUT_CSV}" "${RUN_ID}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${FORMAL_RUN}" "${QOS_MODE}" "${FIRMWARE_MODE}" "${INJECTION_LAYER}" "${HOST_MODE}" "${MANIFEST_SHA}" "${COMMIT_HASH}" "${WORKTREE_STATE}" "${WORKTREE_FINGERPRINT}" "${PING_AVG}" <<'PY'
+    python3 - "${SERIAL_LOG}" "${HOST_LOG}" "${OUTPUT_CSV}" "${RTT_SAMPLES_CSV}" "${RUN_ID}" "${TIMESTAMP}" "${SYSTEM}" "${CONDITION}" "${FORMAL_RUN}" "${QOS_MODE}" "${FIRMWARE_MODE}" "${INJECTION_LAYER}" "${HOST_MODE}" "${MANIFEST_SHA}" "${COMMIT_HASH}" "${WORKTREE_STATE}" "${WORKTREE_FINGERPRINT}" "${PING_AVG}" <<'PY'
 import csv
 import re
 import sys
@@ -311,20 +321,21 @@ import sys
 serial_log_path = sys.argv[1]
 host_log_path = sys.argv[2]
 output_csv = sys.argv[3]
-run_id = sys.argv[4]
-timestamp = sys.argv[5]
-system = sys.argv[6]
-condition = sys.argv[7]
-formal_run = sys.argv[8]
-qos_mode = sys.argv[9]
-firmware_mode = sys.argv[10]
-injection_layer = sys.argv[11]
-host_mode = sys.argv[12]
-manifest_sha256 = sys.argv[13]
-commit_hash = sys.argv[14]
-worktree_state = sys.argv[15]
-worktree_fingerprint = sys.argv[16]
-link_ping_avg_ms = sys.argv[17]
+rtt_samples_csv = sys.argv[4]
+run_id = sys.argv[5]
+timestamp = sys.argv[6]
+system = sys.argv[7]
+condition = sys.argv[8]
+formal_run = sys.argv[9]
+qos_mode = sys.argv[10]
+firmware_mode = sys.argv[11]
+injection_layer = sys.argv[12]
+host_mode = sys.argv[13]
+manifest_sha256 = sys.argv[14]
+commit_hash = sys.argv[15]
+worktree_state = sys.argv[16]
+worktree_fingerprint = sys.argv[17]
+link_ping_avg_ms = sys.argv[18]
 
 with open(serial_log_path, encoding='utf-8', errors='replace') as f:
     serial_content = f.read()
@@ -402,12 +413,22 @@ with open(output_csv, 'a', newline='', encoding='utf-8') as f:
         worktree_fingerprint, link_ping_avg_ms,
     ])
 
+rtt_samples = re.findall(r'RTT_SAMPLE\s+seq=(\d+)\s+rtt_us=(\d+)', serial_content)
+if rtt_samples:
+    with open(rtt_samples_csv, 'a', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        for sequence, rtt_us in rtt_samples:
+            writer.writerow([
+                run_id, timestamp, system, condition, qos_mode, firmware_mode,
+                injection_layer, sequence, rtt_us, manifest_sha256, commit_hash,
+            ])
+
 injection = "n/a"
 if host_injection_attempted != "":
     injection = f"{host_injection_dropped}/{host_injection_attempted}"
 print(
     f"[result] TX={tx_count} RX={rx_count} RTT={rtt_count} "
-    f"matched={matched_pub}&{matched_sub} injection={injection}"
+    f"samples={len(rtt_samples)} matched={matched_pub}&{matched_sub} injection={injection}"
 )
 PY
 

@@ -83,10 +83,17 @@ Current timeline summaries separate packet direction and expose ACKNACK bitmap
 presence, but they still include discovery/control traffic and are not yet a
 per-application-sample retransmission reconstruction.
 
+Per-message RTT support has been added for future reruns: firmware now prints
+`RTT_SAMPLE seq=<n> rtt_us=<us>` for each valid measured reply, `run_matrix.sh`
+writes `_rtt_samples.csv` sidecars, and `summarize_round4_rtt_samples.py`
+computes per-message mean/median/p95/p99/max summaries. Existing formal result
+sets were collected before this instrumentation, so their RTT-tail values remain
+per-run summary statistics unless those cells are rerun.
+
 ## Remaining Gaps Before A Top-Tier Submission
 
-- Add true per-message RTT samples or explicitly state that the reported p95 is
-  the p95 of per-run RTT means.
+- Rerun the key formal cells with the `RTT_SAMPLE` firmware so true
+  per-message RTT p95/p99 can replace the current p95 of per-run RTT means.
 - Reconstruct application-sample-level RTPS behavior from pcap before making a
   specific retransmission or protocol-overhead claim.
 - Repeat the matrix on at least one independent network window or physical
