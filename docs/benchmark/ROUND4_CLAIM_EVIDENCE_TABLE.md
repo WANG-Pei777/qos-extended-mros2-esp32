@@ -21,9 +21,9 @@ mechanism.
 | C3 | In the board-to-host impairment direction, Reliable exhibits substantially higher RTT tails than Best Effort at nonzero loss. | Supported narrowly | `20260712_b2h_net37/analysis/round4_transport_summary.csv`; `20260712_b2h_net37/analysis/round4_transport_qos_effects.csv`; RTT figure SVG | Current p95 is p95 of per-run RTT means, not per-message RTT. Say this explicitly. |
 | C4 | In the board-to-host direction, Best Effort RTT remains near 20 ms through 15 percent ingress loss while delivery declines with loss. | Supported narrowly | `20260712_b2h_net37/analysis/round4_transport_summary.csv`; delivery and RTT figures | Do not imply loss-free delivery; delivery falls from 100 percent to about 86 percent at 15 percent. |
 | C5 | Direction matters: host-to-board and board-to-host impairment produce qualitatively different Reliable/Best Effort tradeoffs. | Supported as an observation | Both summary/effect CSVs; both figure sets; both result-set audits | Treat as a testbed observation until independently repeated. |
-| C6 | RTPS wire traffic was captured for every formal board-to-host condition and representative host-to-board conditions. | Supported | `round4_rtps_capture_summary.csv` in both analysis directories; pcap ledger files; pcap SHA-256 hashes | Counts alone do not prove a specific retransmission mechanism. |
+| C6 | RTPS wire traffic was captured and packet-level timeline evidence was extracted for every formal condition in both directions. | Supported | `round4_rtps_capture_summary.csv` and `round4_rtps_timeline_evidence.csv` in both analysis directories; pcap ledger files; pcap SHA-256 hashes | Timeline evidence includes discovery/control traffic and does not by itself prove application-sample retransmission. |
 | C7 | Reliable improves reliability under packet loss. | Not supported as a broad claim | H2B confidence intervals cross zero; B2H Reliable delivery is lower than Best Effort at 5 percent and 15 percent | Avoid this claim unless narrowed and backed by additional protocol analysis. |
-| C8 | The measured high RTT under Reliable is caused by a specific RTPS mechanism. | Not yet supported | Current pcap summaries count DATA, HEARTBEAT, and ACKNACK only | Requires deeper pcap inspection: sequence numbers, ACKNACK bitmaps, HEARTBEAT timing, retransmission evidence. |
+| C8 | The measured high RTT under Reliable is caused by a specific RTPS mechanism. | Not yet supported | Timeline summaries expose direction, ACKNACK bitmap presence, and RTPS counters, but not yet application-sample reconstruction | Requires deeper pcap inspection: application writer/reader entity isolation, sequence-number timelines, ACKNACK bitmaps, HEARTBEAT timing, retransmission evidence. |
 
 ## Required Citations Within The Repository
 
@@ -34,14 +34,14 @@ mechanism.
 | Summary tables | `results/experiments/20260711_net37/analysis/round4_transport_summary.csv` | `results/experiments/20260712_b2h_net37/analysis/round4_transport_summary.csv` |
 | QoS effects | `results/experiments/20260711_net37/analysis/round4_transport_qos_effects.csv` | `results/experiments/20260712_b2h_net37/analysis/round4_transport_qos_effects.csv` |
 | Figures | `results/experiments/20260711_net37/analysis/figures/*.svg` | `results/experiments/20260712_b2h_net37/analysis/figures/*.svg` |
-| RTPS summaries | `results/experiments/20260711_net37/analysis/round4_rtps_capture_summary.csv` | `results/experiments/20260712_b2h_net37/analysis/round4_rtps_capture_summary.csv` |
+| RTPS summaries | `results/experiments/20260711_net37/analysis/round4_rtps_capture_summary.csv`; `results/experiments/20260711_net37/analysis/round4_rtps_timeline_evidence.csv` | `results/experiments/20260712_b2h_net37/analysis/round4_rtps_capture_summary.csv`; `results/experiments/20260712_b2h_net37/analysis/round4_rtps_timeline_evidence.csv` |
 | Audit commands | `scripts/experiment/audit_round4_result_set.py` | `scripts/experiment/audit_round4_result_set.py --direction board_to_host` |
 
 ## Next Evidence Upgrades
 
 1. Add per-message RTT export or keep the current RTT-tail language strictly as
    "p95 of per-run RTT means."
-2. Add RTPS sequence/ACKNACK/HEARTBEAT timeline analysis before attributing
-   latency to retransmission or discovery behavior.
+2. Reconstruct application-sample-level RTPS sequence/ACKNACK/HEARTBEAT
+   timelines before attributing latency to retransmission or discovery behavior.
 3. Repeat at least the key 0, 5, and 15 percent cells in an independent network
    window to separate testbed effects from environmental effects.

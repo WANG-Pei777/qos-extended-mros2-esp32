@@ -20,6 +20,8 @@ Required checks passed:
 - `plot_round4_transport.py` generated delivery, RTT, and effect-size figures.
 - `summarize_rtps_pcap.py` confirms RTPS DATA, HEARTBEAT, and ACKNACK evidence
   in representative 0 percent and 15 percent captures.
+- `analyze_rtps_timeline.py` generated packet-level direction, ACKNACK bitmap,
+  and RTPS counter summaries for all ten host-to-board formal captures.
 
 Current board-to-host result set:
 
@@ -43,6 +45,8 @@ Required checks passed:
   captures. The interrupted Best Effort 15 percent capture is excluded from the
   analysis summary; the complete rerun is
   `20260712_104142_round4_transport_best_effort_15pct_board_to_host.pcapng`.
+- `analyze_rtps_timeline.py` generated packet-level direction, ACKNACK bitmap,
+  and RTPS counter summaries for all ten complete board-to-host captures.
 
 ## Current Interpretation
 
@@ -75,13 +79,16 @@ testbed and impairment direction, Reliable can trade lower effective delivery
 and substantially higher latency tails for retransmission-oriented behavior
 rather than delivering a simple reliability win. This still needs protocol-level
 pcap inspection before attributing the effect to a specific RTPS mechanism.
+Current timeline summaries separate packet direction and expose ACKNACK bitmap
+presence, but they still include discovery/control traffic and are not yet a
+per-application-sample retransmission reconstruction.
 
 ## Remaining Gaps Before A Top-Tier Submission
 
 - Add true per-message RTT samples or explicitly state that the reported p95 is
   the p95 of per-run RTT means.
-- Inspect and report RTPS submessage behavior from pcap, not just packet counts,
-  before making any retransmission or protocol-overhead claims.
+- Reconstruct application-sample-level RTPS behavior from pcap before making a
+  specific retransmission or protocol-overhead claim.
 - Repeat the matrix on at least one independent network window or physical
   environment to quantify environment sensitivity.
 - Add a claim-to-evidence table that maps every paper claim to CSV, manifest,
