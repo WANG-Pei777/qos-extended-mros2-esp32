@@ -41,7 +41,26 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("csv_paths", nargs="+", type=Path)
     parser.add_argument("--expected-n", type=int, default=30)
+    parser.add_argument(
+        "--direction",
+        choices=("host_to_board", "board_to_host"),
+        default="host_to_board",
+        help="Transport impairment direction encoded in condition/provenance.",
+    )
     return parser.parse_args()
+
+
+def expected_condition(qos, loss, direction):
+    base = f"round4_transport_{qos}_{loss}pct"
+    if direction == "board_to_host":
+        return f"{base}_board_to_host"
+    return base
+
+
+def expected_injection_prefix(direction):
+    if direction == "board_to_host":
+        return "transport_ingress_gact_board_to_host_"
+    return "transport_egress_netem_host_to_board_"
 
 
 def main():
@@ -97,20 +116,21 @@ def main():
         errors.append(f"worktree state must be clean, got {sorted(worktree_states)}")
 
     firmware_by_qos = defaultdict(set)
+    injection_prefix = expected_injection_prefix(args.direction)
     for condition, manifest in manifests.items():
         experiment = manifest["experiment"]
         qos_mode = experiment["qos_mode"]
         firmware_by_qos[qos_mode].add(manifest["firmware_binary"]["sha256"])
         if experiment["firmware_mode"] != qos_mode:
             errors.append(f"{condition}: firmware_mode does not match qos_mode")
-        if not experiment["injection_layer"].startswith("transport_egress_netem_host_to_board_"):
-            errors.append(f"{condition}: injection layer is not host-to-board netem")
+        if not experiment["injection_layer"].startswith(injection_prefix):
+            errors.append(f"{condition}: injection layer does not match {args.direction}")
 
     for qos_mode, firmware_hashes in sorted(firmware_by_qos.items()):
         one_value(f"{qos_mode} firmware sha256", firmware_hashes, errors)
 
     expected_conditions = {
-        f"round4_transport_{qos}_{loss}pct"
+        expected_condition(qos, loss, args.direction)
         for qos in ("reliable", "best_effort")
         for loss in ("0", "1", "5", "10", "15")
     }

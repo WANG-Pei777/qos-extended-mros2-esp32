@@ -14,6 +14,10 @@ import matplotlib.pyplot as plt
 QOS_ORDER = ("best_effort", "reliable")
 LABELS = {"best_effort": "Best Effort", "reliable": "Reliable"}
 COLORS = {"best_effort": "#4c78a8", "reliable": "#f58518"}
+DIRECTION_LABELS = {
+    "host_to_board": "Host-to-board loss (%)",
+    "board_to_host": "Board-to-host loss (%)",
+}
 
 
 def read_csv(path):
@@ -34,6 +38,13 @@ def values(rows, key):
     return [float(row[key]) for row in rows]
 
 
+def loss_axis_label(rows):
+    directions = {row.get("direction", "host_to_board") for row in rows}
+    if len(directions) == 1:
+        return DIRECTION_LABELS.get(next(iter(directions)), "Injected loss (%)")
+    return "Injected loss (%)"
+
+
 def save_all(fig, output_dir, stem):
     for suffix in ("png", "svg"):
         fig.savefig(output_dir / f"{stem}.{suffix}", bbox_inches="tight", dpi=200)
@@ -50,7 +61,7 @@ def plot_delivery(summary_rows, output_dir):
         yerr = [[y - lo for y, lo in zip(ys, low)], [hi - y for y, hi in zip(ys, high)]]
         ax.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3,
                     color=COLORS[qos], label=LABELS[qos])
-    ax.set_xlabel("Host-to-board netem loss (%)")
+    ax.set_xlabel(loss_axis_label(summary_rows))
     ax.set_ylabel("Delivery (%)")
     ax.set_ylim(80, 101)
     ax.grid(True, axis="y", alpha=0.25)
@@ -71,7 +82,7 @@ def plot_rtt(summary_rows, output_dir):
                     color=COLORS[qos], label=f"{LABELS[qos]} mean")
         ax.plot(xs, p95, linestyle="--", linewidth=1.5, color=COLORS[qos],
                 alpha=0.7, label=f"{LABELS[qos]} run-mean p95")
-    ax.set_xlabel("Host-to-board netem loss (%)")
+    ax.set_xlabel(loss_axis_label(summary_rows))
     ax.set_ylabel("RTT (ms)")
     ax.grid(True, axis="y", alpha=0.25)
     ax.legend(frameon=False, ncol=2)
@@ -102,7 +113,7 @@ def plot_effects(effect_rows, output_dir):
     ax_rtt.axhline(0, color="#333333", linewidth=1)
     ax_rtt.errorbar(xs, rtt, yerr=rtt_err, marker="o", linewidth=2,
                     capsize=3, color="#b279a2")
-    ax_rtt.set_xlabel("Host-to-board netem loss (%)")
+    ax_rtt.set_xlabel(loss_axis_label(effect_rows))
     ax_rtt.set_ylabel("RTT diff. (ms)")
     ax_rtt.grid(True, axis="y", alpha=0.25)
 

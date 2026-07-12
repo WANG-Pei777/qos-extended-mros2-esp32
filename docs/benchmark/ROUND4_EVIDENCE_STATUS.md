@@ -2,7 +2,7 @@
 
 ## Main Transport Result Set
 
-Current main result set:
+Current host-to-board result set:
 
 - result directory: `results/experiments/20260711_net37`
 - source commit recorded in manifests: `64e7ec710b3342b838b9561ec5808e882c082efe`
@@ -20,6 +20,29 @@ Required checks passed:
 - `plot_round4_transport.py` generated delivery, RTT, and effect-size figures.
 - `summarize_rtps_pcap.py` confirms RTPS DATA, HEARTBEAT, and ACKNACK evidence
   in representative 0 percent and 15 percent captures.
+
+Current board-to-host result set:
+
+- result directory: `results/experiments/20260712_b2h_net37`
+- source commit recorded in manifests: `4837a369bad28dc8b84e495f8cba22d6c556a1fd`
+- board IP: `10.37.12.107`
+- repetitions: 30 accepted units per QoS/loss cell
+- direction: board-to-host ingress `tc gact random` only
+- Best Effort firmware SHA-256: `199f57a5d60074f48475c9dff580986ab004d6a226e34a92220a3e940404e33b`
+- Reliable firmware SHA-256: `4c184540f1875c1bdf8e7d02bc01fb58c46d9f0e74bc335c5a1feb24530a5bea`
+
+Required checks passed:
+
+- `validate_round4.py` passes for all ten board-to-host formal CSVs.
+- `audit_round4_result_set.py --direction board_to_host` passes for the full
+  ten-condition matrix.
+- `summarize_round4.py` generated board-to-host condition and effect-size tables.
+- `plot_round4_transport.py` generated direction-labeled delivery, RTT, and
+  effect-size figures.
+- `summarize_rtps_pcap.py` summarizes the ten complete board-to-host formal
+  captures. The interrupted Best Effort 15 percent capture is excluded from the
+  analysis summary; the complete rerun is
+  `20260712_104142_round4_transport_best_effort_15pct_board_to_host.pcapng`.
 
 ## Current Interpretation
 
@@ -39,10 +62,22 @@ RTPS/UDP impairment setup, with observed delivery/latency tradeoffs and wire
 evidence from pcap. They are not sufficient for a generalized DDS QoS
 reliability claim.
 
+The board-to-host impairment direction shows a stronger directional asymmetry.
+Best Effort delivery declines roughly with the injected ingress loss while RTT
+stays near 20 ms through 15 percent loss. Reliable has much heavier RTT tails:
+Reliable-minus-Best-Effort mean RTT differences are about 134 ms at 1 percent,
+465 ms at 5 percent, 957 ms at 10 percent, and 1190 ms at 15 percent, with
+bootstrap intervals well above zero. Reliable delivery is also lower than Best
+Effort at 5 percent and 15 percent in this result set.
+
+These board-to-host results support a narrow claim that, in this ESP32/ROS 2
+testbed and impairment direction, Reliable can trade lower effective delivery
+and substantially higher latency tails for retransmission-oriented behavior
+rather than delivering a simple reliability win. This still needs protocol-level
+pcap inspection before attributing the effect to a specific RTPS mechanism.
+
 ## Remaining Gaps Before A Top-Tier Submission
 
-- Run the board-to-host impairment direction with the same N and provenance
-  discipline.
 - Add true per-message RTT samples or explicitly state that the reported p95 is
   the p95 of per-run RTT means.
 - Inspect and report RTPS submessage behavior from pcap, not just packet counts,
