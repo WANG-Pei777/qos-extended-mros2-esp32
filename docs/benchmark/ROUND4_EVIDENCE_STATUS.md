@@ -48,6 +48,28 @@ Required checks passed:
 - `analyze_rtps_timeline.py` generated packet-level direction, ACKNACK bitmap,
   and RTPS counter summaries for all ten complete board-to-host captures.
 
+Current per-message RTT key-cell rerun:
+
+- result directory: `results/experiments/20260712_rtt_samples_b2h_net219_v2`
+- source commit recorded in manifests: `059d483e9c76247b0cefd22e926a0996d8d9cc32`
+- board IP: `10.219.224.107`
+- host IP: `10.219.224.195`
+- direction/loss: board-to-host ingress `tc gact random`, 15 percent only
+- repetitions: 30 accepted units for Reliable and 30 for Best Effort
+- Best Effort firmware SHA-256: `c2c8acaca9444d12fa42d58e194b36ba7babbd08509f5368578c4f518c069a9f`
+- Reliable firmware SHA-256: `c4873bd46e92546bd00c4848f6f4143f7834cd39dc917039db81221bfad5ea30`
+
+Required checks passed:
+
+- `validate_round4.py` passes for both 15 percent CSVs.
+- `_rtt_samples.csv` sidecar row counts equal the sum of `rtt_count` in the
+  corresponding main CSVs.
+- `summarize_round4_rtt_samples.py` generated true per-message RTT mean,
+  median, p95, p99, and max summaries.
+- `summarize_round4.py`, `plot_round4_transport.py`, `summarize_rtps_pcap.py`,
+  and `analyze_rtps_timeline.py` generated matched analysis artifacts for the
+  15 percent key-cell rerun.
+
 ## Current Interpretation
 
 The current host-to-board transport result does not support a broad claim that
@@ -90,10 +112,17 @@ computes per-message mean/median/p95/p99/max summaries. Existing formal result
 sets were collected before this instrumentation, so their RTT-tail values remain
 per-run summary statistics unless those cells are rerun.
 
+The 15 percent board-to-host key cell has now been rerun with per-message RTT
+instrumentation in `20260712_rtt_samples_b2h_net219_v2`. In that rerun, Best
+Effort has 1042 per-message RTT samples with p95 35.276 ms and p99 76.168 ms.
+Reliable has 950 per-message RTT samples with p95 3267.115 ms and p99 6222.092
+ms. Reliable-minus-Best-Effort mean RTT is 1136.828 ms by the run-level
+bootstrap summary, and Reliable delivery is 7.667 percentage points lower.
+
 ## Remaining Gaps Before A Top-Tier Submission
 
-- Rerun the key formal cells with the `RTT_SAMPLE` firmware so true
-  per-message RTT p95/p99 can replace the current p95 of per-run RTT means.
+- Rerun the remaining 0, 1, 5, and 10 percent board-to-host cells with the
+  `RTT_SAMPLE` firmware if the paper needs full per-message RTT curves.
 - Reconstruct application-sample-level RTPS behavior from pcap before making a
   specific retransmission or protocol-overhead claim.
 - Repeat the matrix on at least one independent network window or physical
