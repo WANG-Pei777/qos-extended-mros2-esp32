@@ -1,6 +1,6 @@
 # Round 6 Mechanism Experiment Preregistration
 
-**Status:** frozen design. Endpoint discovery and the 22-assertion source-equivalent baseline verification passed after the AP restart on 2026-07-13. Formal execution remains blocked on parameterized firmware, the memory pilot, immutable archival of all variants, and per-cell smoke gates.
+**Status:** frozen design. Endpoint discovery and the 22-assertion source-equivalent baseline verification passed after the AP restart on 2026-07-13. Independent build parameters and the maximum-depth memory pilot now pass. Formal execution remains blocked on immutable archival of all 12 variants and per-cell smoke gates.
 
 The legacy parameter-sweep scripts are not authorized for formal data collection. This document freezes the hypotheses, factors, execution order, outcomes, and analysis before new mechanism data are observed.
 
@@ -55,6 +55,12 @@ The boot log, build metadata, and result manifest must agree. Before the matrix 
 5. Pass three smoke runs per cell, including configuration and capture validation.
 
 No formal run may edit a tracked source file in place.
+
+### Implemented Gate Evidence
+
+Commit `f0ea69e` exposes all five controls as validated CMake cache parameters and rejects depth above capacity or sample limits below capacity. Both the default build and the maximum preregistered combination (`depth=40`, `capacity=48`, `heartbeat=250 ms`, `max_samples=48`, `max_bytes=65536`) compile with the expected definitions in the application and RTPS components.
+
+The maximum combination passed the 22-assertion hardware smoke with a `40/40` history cache, 58 TX, 58 RX, zero packet drops, and 131,872 bytes free after the behavior phases. It adds 13,376 bytes of static D/IRAM relative to the default build and leaves 203,633 bytes of static D/IRAM available. The pilot firmware, map, logs, and SHA manifest are archived under `results/experiments/20260713_round6_memory_pilot_d40_h250`. This pilot is gate evidence and is not part of the formal factorial dataset.
 
 ## Randomization And Independence
 
