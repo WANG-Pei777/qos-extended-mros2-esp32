@@ -16,7 +16,8 @@ have all of the following:
 
 - a clean committed worktree and a recorded commit hash;
 - explicit board firmware mode, the SHA-256 of the flashed firmware binary,
-  and matching host QoS mode;
+  an immutable SHA-addressed copy of that binary in the result set, and
+  matching host QoS mode;
 - accepted link-quality gate values;
 - endpoint matching in both directions;
 - nonzero TX, RX, and RTT sample counts;
@@ -45,7 +46,8 @@ effect of interest. If the calculation exceeds 30, collect the larger N.
 QoS arms are interleaved in blocks. A block contains one loss level and a fixed
 number of repetitions. Board firmware may only change between blocks, and each
 switch must be recorded in the firmware ledger with the source hash, binary
-hash, flash time, and operator confirmation.
+hash, archived binary path, flash time, and operator confirmation. A manifest
+path that points only to a mutable build output does not satisfy this rule.
 
 ## Transport Evidence
 
@@ -71,6 +73,11 @@ and confidence intervals, not only p-values. Block and collection time are
 recorded as covariates. No outlier removal is allowed except for prespecified
 gate failures, which remain visible in the raw-data ledger.
 
+Runs are the independent experimental units. When message-level RTT samples
+are pooled to estimate median, p95, or p99, uncertainty intervals and QoS
+differences must resample whole runs as clusters. Treating messages from one
+run as independent replicates is prohibited.
+
 ## Comparator And Stability Claims
 
 Do not claim a three-system comparison until upstream mros2-esp32 and micro-ROS
@@ -81,9 +88,10 @@ configuration and completed pre-fix/post-fix evidence.
 ## Release Package
 
 The paper artifact contains source commit(s), build instructions, firmware
-ledger, raw CSV/log/pcap archives, manifests with checksums, analysis scripts,
-figure-generation scripts, and a claim-to-evidence table. A fresh environment
-must be able to regenerate every table and figure from the raw archive.
+ledger, SHA-addressed firmware and host binaries, raw CSV/log/pcap archives,
+manifests with checksums, analysis scripts, figure-generation scripts, and a
+claim-to-evidence table. A fresh environment must be able to regenerate every
+table and figure from the raw archive.
 
 Run `validate_round4.py` on every formal CSV before analysis. Then run
 `audit_round4_result_set.py` over the full transport matrix to verify row
@@ -91,4 +99,6 @@ counts, shared source commit, board IP, host binary, and per-QoS firmware
 hashes. Finally run `summarize_round4.py` over the audited CSVs to generate
 the condition table and QoS effect-size table. The summarizer uses a recorded
 seed and percentile bootstrap confidence intervals, so it must be invoked with
-the same resample count and seed for a release build.
+the same resample count and seed for a release build. For sidecar RTT samples,
+run `summarize_round4_rtt_samples.py` with the release resample count and seed
+to generate run-cluster condition and QoS-tail intervals.

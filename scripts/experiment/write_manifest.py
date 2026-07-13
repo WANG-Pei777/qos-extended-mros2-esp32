@@ -34,6 +34,57 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def resolve_binary_path(path, project_root):
+    if not path:
+        return None
+    candidate = Path(path)
+    if not candidate.is_absolute():
+        candidate = Path(project_root) / candidate
+    return candidate.resolve()
+
+
+def display_path(path, project_root):
+    try:
+        return str(path.relative_to(Path(project_root).resolve()))
+    except ValueError:
+        return str(path)
+
+
+def archive_binary(source_path, artifact_dir, role, project_root):
+    source = resolve_binary_path(source_path, project_root)
+    if source is None:
+        return {"path": "", "source_path": "", "sha256": ""}
+    if not source.is_file():
+        raise ValueError(f"{role} binary does not exist: {source}")
+
+    digest = sha256_file(source)
+    suffix = source.suffix or ".bin"
+    destination_dir = Path(artifact_dir).resolve()
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    destination = destination_dir / f"{role}_{digest}{suffix}"
+
+    if destination.exists():
+        archived_digest = sha256_file(destination)
+        if archived_digest != digest:
+            raise ValueError(
+                f"{role} archive hash mismatch: {destination} "
+                f"contains {archived_digest}, expected {digest}"
+            )
+    else:
+        shutil.copyfile(source, destination)
+        destination.chmod(0o444)
+        archived_digest = sha256_file(destination)
+        if archived_digest != digest:
+            destination.unlink(missing_ok=True)
+            raise ValueError(f"{role} archive copy failed SHA-256 verification")
+
+    return {
+        "path": display_path(destination, project_root),
+        "source_path": str(source_path),
+        "sha256": digest,
+    }
+
+
 def manifest_hash(path):
     return sha256_file(path)
 
@@ -56,6 +107,7 @@ def parse_args():
     parser.add_argument("--worktree-fingerprint", required=True)
     parser.add_argument("--host-binary", default="")
     parser.add_argument("--firmware-binary", default="")
+    parser.add_argument("--artifact-dir", required=True)
     return parser.parse_args()
 
 
@@ -64,8 +116,24 @@ def main():
     path = Path(args.path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    try:
+        host_binary = archive_binary(
+            args.host_binary,
+            args.artifact_dir,
+            "host",
+            args.project_root,
+        )
+        firmware_binary = archive_binary(
+            args.firmware_binary,
+            args.artifact_dir,
+            "firmware",
+            args.project_root,
+        )
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"binary archival failed: {exc}") from exc
+
     immutable = {
-        "schema_version": 1,
+        "schema_version": 2,
         "experiment": {
             "system": args.system,
             "condition": args.condition,
@@ -82,14 +150,8 @@ def main():
             "worktree_state": args.worktree_state,
             "worktree_fingerprint": args.worktree_fingerprint,
         },
-        "host_binary": {
-            "path": args.host_binary,
-            "sha256": sha256_file(args.host_binary),
-        },
-        "firmware_binary": {
-            "path": args.firmware_binary,
-            "sha256": sha256_file(args.firmware_binary),
-        },
+        "host_binary": host_binary,
+        "firmware_binary": firmware_binary,
     }
 
     if path.exists():

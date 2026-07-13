@@ -41,10 +41,13 @@ network window, and impairment mechanism.
 | RTPS timeline summary | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_timeline_evidence.csv` |
 | Capture ledger | `results/experiments/20260712_rtt_samples_b2h_net219_v2/TRANSPORT_INGRESS_GACT_LEDGER.md` |
 | Full-set audit | `scripts/experiment/audit_round4_result_set.py --direction board_to_host` |
+| Source-equivalent verification attempt | `results/experiments/20260713_instrumented_verify_d7f8ab4/verification_manifest.json` |
 
 ## Next Evidence Upgrades
 
-1. Archive the 22-case verification suite for the exact instrumented firmware.
+1. Resolve the current endpoint-discovery gate and pass the 22-assertion suite
+   on a clearly labeled source-equivalent rebuild. The original exact matrix
+   binary cannot be recovered from its overwritten build path.
 2. Reconstruct application-sample RTPS timelines before testing a named
    mechanism.
 3. Repeat pre-registered key cells in an independent environment.

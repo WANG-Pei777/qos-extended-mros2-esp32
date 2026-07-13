@@ -173,7 +173,8 @@ MANIFEST_SHA=$(python3 "${SCRIPT_DIR}/write_manifest.py" \
     --worktree-state "${WORKTREE_STATE}" \
     --worktree-fingerprint "${WORKTREE_FINGERPRINT}" \
     --host-binary "${HOST_BINARY}" \
-    --firmware-binary "${FIRMWARE_BINARY}")
+    --firmware-binary "${FIRMWARE_BINARY}" \
+    --artifact-dir "${RESULTS_DIR}/artifacts")
 echo "Manifest: ${MANIFEST_PATH} (${MANIFEST_SHA})"
 
 for i in $(seq 1 ${N}); do

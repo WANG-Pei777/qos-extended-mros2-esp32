@@ -16,6 +16,9 @@
    证明某个具体应用样本发生了何种重传。
 4. 数据可以支撑限定范围的论文结果，但尚不能据此宣称“达到顶会发表标准”。
    机制归因、独立重复、插桩固件全套验证和外部基线仍是实质缺口。
+5. matrix manifest 记录了原 Reliable SHA-256，但其路径指向可覆盖的 build
+   文件；原 binary 未保留。`d7f8ab4` source-equivalent rebuild 无法复现原
+   SHA，因此现有矩阵已不能补做 exact-binary verify。
 
 ## 可支持的结果
 
@@ -44,9 +47,14 @@ Reliable 长尾，但当前证据无法区分这些解释。`KEEP_LAST(5) × 4 s
 P0 统计任务已完成:固定种子 `20260711`、10,000 次 run-cluster bootstrap、
 单元测试和 QoS tail difference 产物均已生成。
 
+P1 已尝试但未通过:source-equivalent rebuild 的 22 条断言结果为 8 PASS /
+14 FAIL，阻塞点是 endpoint discovery 70 秒内未匹配。行为阶段未执行，不能把
+14 FAIL 解读为 14 项 QoS 回归。证据归档在
+`results/experiments/20260713_instrumented_verify_d7f8ab4`。
+
 | 优先级 | 任务 | 通过标准 |
 | --- | --- | --- |
-| P1 | 对当前插桩固件运行并归档 22 项 verify | exact binary/config 可追溯，22 项结果全部有日志 |
+| P1 | 恢复 discovery 后重跑并通过 22 条 verify | source-equivalent 身份明确；22 PASS；完整日志与 binary SHA 归档 |
 | P2 | 按应用 writer/reader entity 重建 RTPS sample timeline | 能把 sequence、HEARTBEAT、ACKNACK bitmap 与重发 DATA 对齐 |
 | P3 | 预注册 HISTORY depth × heartbeat 参数实验 | 配置真实生效并进入 manifest；随机化/交错执行；主终点事先冻结 |
 | P4 | 在独立网络窗口重复 0%、5%、15% | 效应方向与 tail 结论可复现 |

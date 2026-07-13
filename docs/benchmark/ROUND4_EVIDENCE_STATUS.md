@@ -59,6 +59,20 @@ The current board-to-host matrix passes the following checks:
 - `summarize_rtps_pcap.py` and `analyze_rtps_timeline.py` generated matched
   RTPS capture and packet-level timeline summaries for all ten cells.
 
+The exact Reliable matrix binary was not retained as an immutable file. Its
+manifest SHA-256 is `76f797528786683ffe9f1e16c734b39cb4bcdfc086cbc8db03695bfb244491d0`,
+but the manifest path `workspace/qos_eval/build/qos_eval.bin` was overwritten by
+the subsequent Best Effort build. A detached `d7f8ab4` rebuild matched the
+recorded app version, compile time, source configuration, and remote IP but did
+not reproduce the original SHA-256. This is an artifact-retention gap.
+
+A source-equivalent 22-assertion hardware verification was attempted and
+archived in `results/experiments/20260713_instrumented_verify_d7f8ab4`. It
+returned 8 PASS and 14 FAIL because the prerequisite ESP32/ROS 2 endpoint
+discovery gate failed (`publisher=no subscriber=no wait=70000ms`). The
+downstream behavior checks therefore did not execute. This attempt is neither
+an exact-binary verification nor evidence of 14 independent QoS regressions.
+
 ## Current Interpretation
 
 The host-to-board result does not support a broad claim that Reliable improves
@@ -103,8 +117,10 @@ DDS reliability theorem.
 
 ## Remaining Gaps Before A Top-Tier Submission
 
-1. Run and archive the full 22-case verification suite on the exact
-   instrumented firmware binaries used by the current matrix.
+1. Restore board/host discovery in a clean network window and rerun the
+   22-assertion suite. Exact-binary verification of the existing matrix is no
+   longer possible because the original binary was not retained; report the
+   replacement explicitly as source-equivalent verification.
 2. Reconstruct application-sample-level RTPS sequence, HEARTBEAT, ACKNACK
    bitmap, and retransmission timelines before attributing the tail to a
    specific mechanism.
