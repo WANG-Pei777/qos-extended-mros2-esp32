@@ -180,6 +180,14 @@ def main():
     firmware_set = args.firmware_set.resolve()
     if git_output(project_root, "status", "--porcelain"):
         raise SystemExit("formal execution requires a clean harness worktree")
+    wrapper = project_root / "scripts/experiment/run_transport_ingress_gact.sh"
+    host_binary = (
+        project_root
+        / "tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node"
+    )
+    for executable in (wrapper, host_binary):
+        if not executable.is_file() or not os.access(executable, os.X_OK):
+            raise SystemExit(f"formal executable unavailable: {executable}")
     harness_commit = git_output(project_root, "rev-parse", "HEAD")
     set_manifest_path = firmware_set / "manifest.json"
     set_manifest = json.loads(set_manifest_path.read_text(encoding="utf-8"))
