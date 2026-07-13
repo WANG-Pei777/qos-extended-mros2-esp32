@@ -10,6 +10,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 
 
@@ -84,13 +85,22 @@ def require_clean_harness(project_root):
         raise SystemExit("smoke gates require a clean harness worktree")
 
 
-def require_network(board_ip, interface):
-    subprocess.run(
-        ["ping", "-c", "2", "-W", "2", board_ip],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=True,
-    )
+def require_network(board_ip, interface, timeout_seconds=45):
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        completed = subprocess.run(
+            ["ping", "-c", "1", "-W", "1", board_ip],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if completed.returncode == 0:
+            break
+        if time.monotonic() >= deadline:
+            raise SystemExit(
+                f"board {board_ip} did not become reachable within "
+                f"{timeout_seconds}s"
+            )
+        time.sleep(2)
     tc = subprocess.check_output(
         ["sudo", "-n", "tc", "qdisc", "show", "dev", interface],
         text=True,

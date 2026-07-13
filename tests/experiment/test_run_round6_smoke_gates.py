@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 SCRIPT_PATH = (
@@ -16,6 +17,21 @@ SPEC.loader.exec_module(MODULE)
 
 
 class Round6SmokeTests(unittest.TestCase):
+    @mock.patch.object(
+        MODULE.subprocess,
+        "check_output",
+        return_value="qdisc fq_codel 0: root\n",
+    )
+    @mock.patch.object(MODULE.subprocess, "run")
+    def test_network_gate_accepts_reachable_board_without_netem(
+        self,
+        run,
+        _check_output,
+    ):
+        run.return_value.returncode = 0
+        MODULE.require_network("192.0.2.10", "eth1", timeout_seconds=0)
+        run.assert_called_once()
+
     def test_verification_parser_requires_exact_summary_lines(self):
         text = "\n".join(
             ["[PASS] check"] * 22 + ["[verify] RESULT: PASS"]
