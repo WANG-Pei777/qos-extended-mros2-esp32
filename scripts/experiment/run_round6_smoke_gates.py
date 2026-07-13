@@ -193,7 +193,7 @@ def count_board_udp_packets(pcap_path, board_ip):
             "-r",
             str(pcap_path),
             "-Y",
-            f"udp && ip.addr == {board_ip}",
+            f"udp && ip.src == {board_ip}",
             "-T",
             "fields",
             "-e",

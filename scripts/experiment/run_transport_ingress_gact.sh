@@ -59,10 +59,16 @@ fi
 DATE="${RESULTS_DATE:-$(date +%Y%m%d)}"
 STAMP=$(date +%Y%m%d_%H%M%S)
 LOSS_LABEL="${LOSS_PERCENT//./p}pct"
-CONDITION="round4_transport_${QOS_MODE}_${LOSS_LABEL}_board_to_host"
-PCAP_DIR="${PROJECT_ROOT}/results/experiments/pcaps"
+CONDITION_OVERRIDE="${CONDITION_OVERRIDE:-}"
+if [ -n "${CONDITION_OVERRIDE}" ] && ! [[ "${CONDITION_OVERRIDE}" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    echo "Error: CONDITION_OVERRIDE contains unsupported characters" >&2
+    exit 2
+fi
+CONDITION="${CONDITION_OVERRIDE:-round4_transport_${QOS_MODE}_${LOSS_LABEL}_board_to_host}"
+PCAP_DIR="${PCAP_DIR_OVERRIDE:-${PROJECT_ROOT}/results/experiments/pcaps}"
 PCAP_PATH="${PCAP_DIR}/${STAMP}_${CONDITION}.pcapng"
 CAPTURE_LOG="${PCAP_PATH}.log"
+TC_STATE_LOG="${PCAP_PATH}.tc.txt"
 LEDGER="${PROJECT_ROOT}/results/experiments/${DATE}/TRANSPORT_INGRESS_GACT_LEDGER.md"
 CAPTURE_PID=""
 INGRESS_ACTIVE=0
@@ -76,12 +82,19 @@ cleanup() {
         wait "${CAPTURE_PID}" 2>/dev/null || true
     fi
     if [ "${INGRESS_ACTIVE}" = "1" ]; then
+        {
+            printf '\nphase=final timestamp=%s\n' "$(date --iso-8601=seconds)"
+            sudo -n tc qdisc show dev "${NETEM_INTERFACE}"
+            sudo -n tc -s filter show dev "${NETEM_INTERFACE}" ingress
+        } >> "${TC_STATE_LOG}" 2>&1 || true
         sudo tc qdisc del dev "${NETEM_INTERFACE}" ingress 2>/dev/null || true
     fi
     if [ -f "${PCAP_PATH}" ]; then
-        printf '%s | qos=%s | firmware=%s | direction=board_to_host | loss=%s%% | pcap=%s | sha256=%s\n' \
+        printf '%s | qos=%s | firmware=%s | direction=board_to_host | target_loss=%s%% | denominator=%s | effective_loss=%s%% | pcap=%s | sha256=%s | tc_state=%s | tc_state_sha256=%s\n' \
             "${STAMP}" "${QOS_MODE}" "${FIRMWARE_MODE}" "${LOSS_PERCENT}" \
-            "${PCAP_PATH}" "$(sha256sum "${PCAP_PATH}" | awk '{print $1}')" >> "${LEDGER}"
+            "${DROP_DENOMINATOR:-n/a}" "${EFFECTIVE_DROP_PERCENT:-${LOSS_PERCENT}}" \
+            "${PCAP_PATH}" "$(sha256sum "${PCAP_PATH}" | awk '{print $1}')" \
+            "${TC_STATE_LOG}" "$([ -f "${TC_STATE_LOG}" ] && sha256sum "${TC_STATE_LOG}" | awk '{print $1}' || printf 'missing')" >> "${LEDGER}"
     fi
     exit "${status}"
 }
@@ -95,30 +108,42 @@ tshark -i "${CAPTURE_INTERFACE}" \
     -w "${PCAP_PATH}" > "${CAPTURE_LOG}" 2>&1 &
 CAPTURE_PID=$!
 sleep 2
+if ! kill -0 "${CAPTURE_PID}" 2>/dev/null; then
+    echo "Error: tshark capture failed to remain active; see ${CAPTURE_LOG}" >&2
+    exit 2
+fi
 
-DROP_PERCENT=$(awk -v loss="${LOSS_PERCENT}" 'BEGIN { printf "%d", loss }')
-if [ "${DROP_PERCENT}" -gt 0 ]; then
+DROP_DENOMINATOR=""
+EFFECTIVE_DROP_PERCENT="${LOSS_PERCENT}"
+if awk -v loss="${LOSS_PERCENT}" 'BEGIN { exit !(loss > 0) }'; then
     sudo tc qdisc del dev "${NETEM_INTERFACE}" ingress 2>/dev/null || true
     sudo tc qdisc add dev "${NETEM_INTERFACE}" ingress
     INGRESS_ACTIVE=1
-    if [ "${DROP_PERCENT}" -ge 100 ]; then
+    if awk -v loss="${LOSS_PERCENT}" 'BEGIN { exit !(loss >= 100) }'; then
         sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
             src_ip "${BOARD_IP}" ip_proto udp \
             action gact drop
     else
         # gact random uses an inverse-probability denominator: 10 ~= 10%.
         DROP_DENOMINATOR=$(awk -v loss="${LOSS_PERCENT}" 'BEGIN { printf "%d", (100.0 / loss) + 0.5 }')
+        EFFECTIVE_DROP_PERCENT=$(awk -v denominator="${DROP_DENOMINATOR}" \
+            'BEGIN { printf "%.6f", 100.0 / denominator }')
         sudo tc filter add dev "${NETEM_INTERFACE}" ingress protocol ip pref 10 flower \
             src_ip "${BOARD_IP}" ip_proto udp \
             action gact pass random netrand drop "${DROP_DENOMINATOR}"
     fi
+    {
+        printf 'phase=configured timestamp=%s\n' "$(date --iso-8601=seconds)"
+        sudo -n tc qdisc show dev "${NETEM_INTERFACE}"
+        sudo -n tc -s filter show dev "${NETEM_INTERFACE}" ingress
+    } > "${TC_STATE_LOG}" 2>&1
 fi
 
 FORMAL_RUN=1 \
 QOS_MODE="${QOS_MODE}" \
 FIRMWARE_MODE="${FIRMWARE_MODE}" \
 FIRMWARE_BINARY="${FIRMWARE_BINARY}" \
-INJECTION_LAYER="transport_ingress_gact_board_to_host_${LOSS_PERCENT}pct" \
+INJECTION_LAYER="transport_ingress_gact_board_to_host_target_${LOSS_PERCENT}pct_${DROP_DENOMINATOR:+1of${DROP_DENOMINATOR}_}effective_${EFFECTIVE_DROP_PERCENT}pct" \
 HOST_MODE="cpp" \
 BOARD_IP="${BOARD_IP}" \
 RESULTS_DATE="${DATE}" \

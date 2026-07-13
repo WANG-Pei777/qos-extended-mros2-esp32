@@ -29,12 +29,16 @@ Sweeping only `HISTORY_SIZE_STATEFUL` above 5 would not necessarily change runti
 | Factor | Levels |
 | --- | --- |
 | QoS | Reliable only |
-| Direction and impairment | board-to-host ingress, 15% netem loss |
+| Direction and impairment | board-to-host ingress; nominal 15% target, gact 1/7 configured drop probability (14.286%) |
 | Runtime KEEP_LAST depth | 5, 10, 20, 40 |
 | Heartbeat period | 250, 1000, 4000 ms |
 | Accepted independent runs | 30 per cell |
 
 All 12 cells use compile-time stateful history capacity 48. Publisher `max_samples` must be at least 48, and `max_bytes` must be shown nonbinding in a memory pilot. These controls remain identical across cells.
+
+The ingress implementation uses Linux `tc gact random netrand`, whose probability is represented by an integer inverse denominator. The frozen nominal 15% target therefore maps to denominator 7, or 14.285714% configured probability. Formal condition labels, ledgers, and analysis must report both values and must not describe the implementation as exact 15% netem.
+
+This is a pre-data implementation amendment made after the smoke gates and before any formal factorial run. The archived firmware and factor levels are unchanged. The frozen executor records one PCAP and one `tc -s` state snapshot per attempted run so the configured action and capture continuity remain auditable.
 
 ## Implementation Gate
 
@@ -62,6 +66,11 @@ The builder requires a clean worktree, enables a commit-derived
 archives content-addressed binaries and linker evidence, and emits the frozen
 10-superblock schedule from seed `20260714`.
 
+Formal collection is executed by `scripts/experiment/run_round6_formal.py`.
+It refuses a dirty harness, verifies the frozen schedule and firmware hashes,
+flashes each scheduled variant, assigns accepted-run ordinals separately from
+attempt IDs, and retains every instrumentation rejection and retry.
+
 ### Implemented Gate Evidence
 
 Commit `f0ea69e` exposes all five controls as validated CMake cache parameters and rejects depth above capacity or sample limits below capacity. Both the default build and the maximum preregistered combination (`depth=40`, `capacity=48`, `heartbeat=250 ms`, `max_samples=48`, `max_bytes=65536`) compile with the expected definitions in the application and RTPS components.
@@ -70,13 +79,13 @@ The maximum combination passed the 22-assertion hardware smoke with a `40/40` hi
 
 The formal firmware set is archived under `results/experiments/20260713_round6_firmware_set_5dabf7e`. It contains 12 unique firmware SHA-256 values from source commit `5dabf7e`, 96 hashed build artifacts, and a 120-visit schedule. An independent rebuild of `d05_h0250` reproduced the firmware, bootloader, and partition-table SHA values exactly.
 
-All 12 cells then passed three hardware/capture smoke runs each: 36 accepted runs, 22/22 assertions per run, and nonempty board UDP evidence in every PCAP. The audit revalidated 216 run files. One preliminary 30-second capture was retained in the rejection ledger because its harness window ended before the final behavior summary; it is excluded from the 36 accepted smoke runs. Smoke evidence is gate-only and must not enter the formal factorial analysis.
+All 12 cells then passed three hardware/capture smoke runs each: 36 accepted runs, 22/22 assertions per run, and nonempty board-to-host UDP evidence in every PCAP. The audit revalidated 216 run files. A stricter pre-data re-audit using `udp && ip.src == 10.219.224.107` found board-originated traffic in 36/36 accepted PCAPs (minimum 390, maximum 2,917 packets). One preliminary 30-second capture was retained in the rejection ledger because its harness window ended before the final behavior summary; it is excluded from the 36 accepted smoke runs. Smoke evidence is gate-only and must not enter the formal factorial analysis.
 
 ## Randomization And Independence
 
 Use 10 randomized superblocks. Each superblock visits every one of the 12 cells once in a seeded order and collects three consecutive accepted runs per visit, yielding 30 accepted runs per cell. The frozen randomization seed is `20260714`.
 
-A run receives a new application process/GUID boundary and its own sidecar. Rejected runs are retained with a rejection reason and are not silently replaced. Thermal state, board resets, capture continuity, netem state, and firmware SHA are recorded.
+A run receives a new application process/GUID boundary, its own sidecar, and its own PCAP. Rejected runs are retained with a rejection reason and are not silently replaced. Board resets, wall-clock time, randomized block/visit position, link-health covariate, capture continuity, `tc gact` state, and firmware SHA are recorded. The frozen firmware does not expose a calibrated board-temperature measurement, so no temperature-based exclusion is permitted; block/visit position and reset cadence are the prespecified controls for time-correlated thermal drift.
 
 ## Frozen Outcomes
 

@@ -141,6 +141,7 @@ export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}"
 export ROS_LOCALHOST_ONLY="${ROS_LOCALHOST_ONLY:-0}"
 
 BOARD_IP="${BOARD_IP:-10.84.233.107}"
+SERIAL_PORT="${SERIAL_PORT:-/dev/ttyUSB0}"
 LINK_GATE_MS="${LINK_GATE_MS:-100}"
 if [ "${LINK_GATE_MS}" = "0" ]; then
     echo "[link-gate] LINK_GATE_MS=0 is prohibited by ROUND4; aborting" >&2
@@ -276,7 +277,7 @@ for i in $(seq 1 ${N}); do
     fi
 
     # Reset ESP32 and capture serial
-    python3 - /dev/ttyUSB0 75 "${SERIAL_LOG}" <<'PY'
+    python3 - "${SERIAL_PORT}" 75 "${SERIAL_LOG}" <<'PY'
 import serial
 import sys
 import time
