@@ -58,6 +58,10 @@ The current board-to-host matrix passes the following checks:
   `TRANSPORT_INGRESS_GACT_LEDGER.md`.
 - `summarize_rtps_pcap.py` and `analyze_rtps_timeline.py` generated matched
   RTPS capture and packet-level timeline summaries for all ten cells.
+- `reconstruct_rtps_app_samples.py` isolated the application writer/reader
+  entity IDs, separated 30 GUID-delimited runs in every capture, and generated
+  per-run DATA sequence, ACKNACK request, HEARTBEAT, and NACK-to-DATA link
+  artifacts.
 
 The exact Reliable matrix binary was not retained as an immutable file. Its
 manifest SHA-256 is `76f797528786683ffe9f1e16c734b39cb4bcdfc086cbc8db03695bfb244491d0`,
@@ -104,10 +108,25 @@ result is boundary-level evidence because its lower interval endpoint is close
 to zero; the 5 through 15 percent intervals are much more stable. At 0 percent,
 Reliable p95 is lower by 5.544 ms, 95 percent CI [-9.616, -2.440].
 
-The PCAP summaries prove that RTPS DATA, HEARTBEAT, and ACKNACK traffic was
-observed on the wire. They do not identify application entities or reconstruct
-sample-level retransmission. Discovery and unrelated control traffic remain in
-the counts, so a specific RTPS mechanism must remain a hypothesis.
+The application-entity reconstruction identifies board writer
+`0x000001:0x03` and host reader `0x000012:0x04` for `/qos_eval`. Best Effort
+has zero repeated application DATA sequence observations at every loss level.
+For Reliable, unique sequences with DATA observed both before and after a
+matching ACKNACK request increase from 0 at zero loss to 7, 32, 53, and 67 at
+1, 5, 10, and 15 percent loss. At 15 percent, 71 requested-sequence links have
+a later same-sequence DATA observation, with median NACK-to-DATA delay
+39.524 ms. The board application writer HEARTBEAT interval has a run-median
+near 4000 ms.
+
+At the independent-run level, the number of Reliable runs with at least one
+sequence observed both before and after its ACKNACK request is 0, 6, 19, 26,
+and 29 out of 30 at 0, 1, 5, 10, and 15 percent loss.
+
+These are wire-level sequence observations, not proof that the first packet
+was delivered or that writer-history eviction caused an unmatched request.
+Ingress capture can observe a packet before `tc` drops it. A specific internal
+RTPS mechanism therefore remains a hypothesis pending controlled intervention
+or direct writer-history state evidence.
 
 The defensible paper claim is narrow: in this ESP32/mROS2 and ROS 2 testbed,
 board-to-host ingress impairment produced a Reliable latency-tail penalty
@@ -121,9 +140,10 @@ DDS reliability theorem.
    22-assertion suite. Exact-binary verification of the existing matrix is no
    longer possible because the original binary was not retained; report the
    replacement explicitly as source-equivalent verification.
-2. Reconstruct application-sample-level RTPS sequence, HEARTBEAT, ACKNACK
-   bitmap, and retransmission timelines before attributing the tail to a
-   specific mechanism.
+2. Extend the application-entity reconstruction with writer-history state or
+   controlled intervention before attributing unmatched ACKNACK requests or
+   the RTT tail to history eviction, heartbeat timing, or head-of-line
+   blocking.
 3. Test pre-registered mechanism interventions, such as writer history depth
    and heartbeat period, only after confirming that the implementation exposes
    and records those controls.

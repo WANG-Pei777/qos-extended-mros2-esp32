@@ -11,9 +11,11 @@
 2. 完整矩阵审计通过。所有单元来自提交
    `d7f8ab446240e93b8b05a27816313f1338c2a629`，同一 QoS 下固件哈希一致，
    主 CSV 的 `rtt_count` 与 sidecar 行数逐格相等。
-3. 10 个最终 PCAP 的 SHA-256 与账本一致，RTPS capture summary 和 packet-level
-   timeline 已生成。该证据证明线上出现了 DATA、HEARTBEAT 和 ACKNACK，但尚不能
-   证明某个具体应用样本发生了何种重传。
+3. 10 个最终 PCAP 的 SHA-256 与账本一致。应用 entity 已隔离，30 个 GUID run
+   分界可重建。Reliable 中 NACK 前后均观察到同序号 DATA 的 unique sequence
+   数随 0/1/5/10/15% 丢包从 0 增至 0/7/32/53/67；Best Effort 各档均为 0。
+   这支持 wire-level post-NACK DATA 行为，但不证明首包已交付或 writer history
+   驱逐是根因。
 4. 数据可以支撑限定范围的论文结果，但尚不能据此宣称“达到顶会发表标准”。
    机制归因、独立重复、插桩固件全套验证和外部基线仍是实质缺口。
 5. matrix manifest 记录了原 Reliable SHA-256，但其路径指向可覆盖的 build
@@ -42,6 +44,12 @@ Reliable 长尾，但当前证据无法区分这些解释。`KEEP_LAST(5) × 4 s
 只能作为待检验假说，不能写入结论。只有在完成实体隔离的 sample timeline 和
 预注册参数干预后，才能进行机制归因。
 
+当前实体隔离和 sequence link 已完成；15% 下 71 个 ACKNACK requested-sequence
+link 后续观察到同序号 DATA，NACK-to-DATA 中位 39.524 ms，board writer
+HEARTBEAT run-median 约 4000 ms。至少出现一次 NACK 前后同序号 DATA 的
+Reliable run 数随 0/1/5/10/15% 为 0/6/19/26/29 (每档 N=30)。下一步缺的是
+writer cache state 或受控参数干预，不是继续做全流量计数。
+
 ## 下一阶段优先级
 
 P0 统计任务已完成:固定种子 `20260711`、10,000 次 run-cluster bootstrap、
@@ -55,7 +63,7 @@ P1 已尝试但未通过:source-equivalent rebuild 的 22 条断言结果为 8 P
 | 优先级 | 任务 | 通过标准 |
 | --- | --- | --- |
 | P1 | 恢复 discovery 后重跑并通过 22 条 verify | source-equivalent 身份明确；22 PASS；完整日志与 binary SHA 归档 |
-| P2 | 按应用 writer/reader entity 重建 RTPS sample timeline | 能把 sequence、HEARTBEAT、ACKNACK bitmap 与重发 DATA 对齐 |
+| P2 | 用 writer cache state 或受控干预完成机制归因 | 在现有 entity/sequence link 基础上区分 history eviction、heartbeat 与其他解释 |
 | P3 | 预注册 HISTORY depth × heartbeat 参数实验 | 配置真实生效并进入 manifest；随机化/交错执行；主终点事先冻结 |
 | P4 | 在独立网络窗口重复 0%、5%、15% | 效应方向与 tail 结论可复现 |
 | P5 | 加入语义对齐的外部实现基线 | 消息大小、频率、QoS、硬件、丢包方向和统计单位一致 |

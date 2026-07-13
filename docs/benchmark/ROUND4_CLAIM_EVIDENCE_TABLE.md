@@ -21,9 +21,9 @@ network window, and impairment mechanism.
 | C3 | Under board-to-host impairment, Reliable has a higher per-message RTT p95 than Best Effort at 1, 5, 10, and 15 percent loss. | Supported with run-cluster intervals | `20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtt_message_qos_effects.csv`; matched sidecars | The 1 percent CI lower endpoint is 1.642 ms and should be described as boundary-level evidence; 5 through 15 percent are stronger. |
 | C4 | At 15 percent board-to-host loss, Reliable delivery is lower than Best Effort by 6.417 percentage points. | Supported narrowly | `20260712_rtt_samples_b2h_net219_v2/analysis/round4_transport_qos_effects.csv`; 95 percent CI [-11.333, -1.667] | Delivery differences at 1, 5, and 10 percent have intervals crossing zero. |
 | C5 | Direction matters: host-to-board and board-to-host impairment produce qualitatively different QoS tradeoffs. | Supported as an observation | Both full-matrix summaries, figures, manifests, and audits | Treat this as testbed-specific until independently repeated. |
-| C6 | RTPS wire traffic was captured and packet-level timeline evidence was extracted for every cell in the current matrix. | Supported | Current `round4_rtps_capture_summary.csv`; `round4_rtps_timeline_evidence.csv`; ledger; PCAP hashes | Counts include discovery/control traffic and are not application-sample retransmission traces. |
+| C6 | RTPS wire traffic was captured and application entity sequence evidence was reconstructed for every cell in the current matrix. | Supported | Current `round4_rtps_capture_summary.csv`; `round4_rtps_timeline_evidence.csv`; `round4_rtps_app_reconstruction_summary.csv`; ledger; PCAP hashes | Ingress capture can observe a packet before `tc` drops it; wire observation is not application delivery. |
 | C7 | Reliable improves delivery under packet loss. | Not supported as a broad claim | H2B intervals cross zero; current B2H result is nonpositive and significantly negative at 15 percent | Exclude this claim from the paper. |
-| C8 | The Reliable RTT tail is caused by a specific history-depth or heartbeat mechanism. | Not yet supported | Current PCAP summaries expose traffic classes and counters only | Requires entity-isolated sample reconstruction and controlled intervention experiments. |
+| C8 | Reliable produces post-ACKNACK same-sequence DATA observations whose frequency increases with injected board-to-host loss. | Supported as wire behavior | `round4_rtps_app_nack_data_links.csv`; `round4_rtps_app_reconstruction_runs.csv` | Do not convert this into a history-eviction, delivery, or causal latency claim without controlled intervention. |
 
 ## Current Matrix Artifacts
 
@@ -39,6 +39,9 @@ network window, and impairment mechanism.
 | Figures | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/figures/*` |
 | RTPS capture summary | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_capture_summary.csv` |
 | RTPS timeline summary | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_timeline_evidence.csv` |
+| Application RTPS run reconstruction | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_app_reconstruction_runs.csv` |
+| Application ACKNACK-to-DATA links | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_app_nack_data_links.csv` |
+| Application RTPS condition summary | `results/experiments/20260712_rtt_samples_b2h_net219_v2/analysis/round4_rtps_app_reconstruction_summary.csv` |
 | Capture ledger | `results/experiments/20260712_rtt_samples_b2h_net219_v2/TRANSPORT_INGRESS_GACT_LEDGER.md` |
 | Full-set audit | `scripts/experiment/audit_round4_result_set.py --direction board_to_host` |
 | Source-equivalent verification attempt | `results/experiments/20260713_instrumented_verify_d7f8ab4/verification_manifest.json` |
@@ -48,7 +51,7 @@ network window, and impairment mechanism.
 1. Resolve the current endpoint-discovery gate and pass the 22-assertion suite
    on a clearly labeled source-equivalent rebuild. The original exact matrix
    binary cannot be recovered from its overwritten build path.
-2. Reconstruct application-sample RTPS timelines before testing a named
-   mechanism.
+2. Add writer-history state or a controlled parameter intervention before
+   testing a named mechanism.
 3. Repeat pre-registered key cells in an independent environment.
 4. Add a semantically aligned external implementation baseline.
