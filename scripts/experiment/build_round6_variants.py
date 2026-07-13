@@ -139,6 +139,20 @@ def compile_definition_evidence(path, variant):
     return {"main": expected_main, "rtps": expected_rtps}
 
 
+def build_artifact_sources(workspace, build_dir):
+    workspace = Path(workspace)
+    build_dir = Path(build_dir)
+    return {
+        "firmware": build_dir / "qos_eval.bin",
+        "bootloader": build_dir / "bootloader/bootloader.bin",
+        "partition_table": build_dir / "partition_table/partition-table.bin",
+        "elf": build_dir / "qos_eval.elf",
+        "linker_map": build_dir / "qos_eval.map",
+        "sdkconfig": workspace / "sdkconfig",
+        "generated_sdkconfig_header": build_dir / "config/sdkconfig.h",
+    }
+
+
 def write_schedule(output_dir, seed):
     rows = randomized_schedule(seed)
     csv_path = output_dir / "randomized_schedule.csv"
@@ -275,14 +289,7 @@ def build_variant(
     )
 
     artifact_dir = output_dir / "artifacts"
-    sources = {
-        "firmware": build_dir / "qos_eval.bin",
-        "bootloader": build_dir / "bootloader/bootloader.bin",
-        "partition_table": build_dir / "partition_table/partition-table.bin",
-        "elf": build_dir / "qos_eval.elf",
-        "linker_map": build_dir / "qos_eval.map",
-        "sdkconfig": build_dir / "sdkconfig",
-    }
+    sources = build_artifact_sources(workspace, build_dir)
     artifacts = {
         role: archive_file(
             source,

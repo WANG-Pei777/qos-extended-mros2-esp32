@@ -76,6 +76,16 @@ class Round6BuildTests(unittest.TestCase):
             self.assertFalse(Path(record["path"]).is_absolute())
             self.assertTrue(MODULE.verify_archived_record(record, root / "result"))
 
+    def test_sdkconfig_sources_match_esp_idf_layout(self):
+        workspace = Path("/project/workspace/qos_eval")
+        build = workspace / "build_round6_cell"
+        sources = MODULE.build_artifact_sources(workspace, build)
+        self.assertEqual(sources["sdkconfig"], workspace / "sdkconfig")
+        self.assertEqual(
+            sources["generated_sdkconfig_header"],
+            build / "config/sdkconfig.h",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
