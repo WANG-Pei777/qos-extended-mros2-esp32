@@ -1,6 +1,6 @@
 # Round 6 Mechanism Experiment Preregistration
 
-**Status:** frozen design; execution is blocked until endpoint discovery is restored and the 22-assertion verification suite passes.
+**Status:** frozen design. Endpoint discovery and the 22-assertion source-equivalent baseline verification passed after the AP restart on 2026-07-13. Formal execution remains blocked on parameterized firmware, the memory pilot, immutable archival of all variants, and per-cell smoke gates.
 
 The legacy parameter-sweep scripts are not authorized for formal data collection. This document freezes the hypotheses, factors, execution order, outcomes, and analysis before new mechanism data are observed.
 

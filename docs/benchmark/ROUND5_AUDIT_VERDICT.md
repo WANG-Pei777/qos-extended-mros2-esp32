@@ -55,14 +55,17 @@ writer cache state 或受控参数干预，不是继续做全流量计数。
 P0 统计任务已完成:固定种子 `20260711`、10,000 次 run-cluster bootstrap、
 单元测试和 QoS tail difference 产物均已生成。
 
-P1 已尝试但未通过:source-equivalent rebuild 的 22 条断言结果为 8 PASS /
-14 FAIL，阻塞点是 endpoint discovery 70 秒内未匹配。行为阶段未执行，不能把
-14 FAIL 解读为 14 项 QoS 回归。证据归档在
-`results/experiments/20260713_instrumented_verify_d7f8ab4`。
+P1 的首次尝试因 AP 二层转发故障停在 endpoint discovery，结果为 8 PASS /
+14 FAIL；行为阶段当时没有执行。AP 重启后，同一 source-equivalent rebuild
+完成 22 PASS / 0 FAIL，双向匹配等待 9400 ms，TX/RX 均为 40，packet drops
+为 0。重试证据和 SHA manifest 归档在
+`results/experiments/20260713_instrumented_verify_d7f8ab4/retry2_after_ap_restart`。
+该结果验证 source-equivalent 固件行为，但不能恢复未归档的原始矩阵 binary，
+也不能把它表述为 exact-binary verification。
 
 | 优先级 | 任务 | 通过标准 |
 | --- | --- | --- |
-| P1 | 恢复 discovery 后重跑并通过 22 条 verify | source-equivalent 身份明确；22 PASS；完整日志与 binary SHA 归档 |
+| P1 | 已完成 source-equivalent 22 条 verify | 22 PASS；完整日志与 binary SHA 已归档；保留非 exact-binary 限定 |
 | P2 | 用 writer cache state 或受控干预完成机制归因 | 在现有 entity/sequence link 基础上区分 history eviction、heartbeat 与其他解释 |
 | P3 | 预注册 HISTORY depth × heartbeat 参数实验 | 配置真实生效并进入 manifest；随机化/交错执行；主终点事先冻结 |
 | P4 | 在独立网络窗口重复 0%、5%、15% | 效应方向与 tail 结论可复现 |
