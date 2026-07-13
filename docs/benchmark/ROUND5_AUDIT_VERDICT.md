@@ -76,3 +76,9 @@ penalty 和 run-cluster bootstrap 支持的 p95 重尾，同时没有测得 deli
 优势；该现象与 host-to-board
 方向不同。不得外推为 DDS 普遍规律，也不得在 sample-level RTPS 重建前断言
 具体重传机制。
+
+## Round 6 机制实验冻结
+
+P3 的确认性设计已在 `docs/benchmark/ROUND6_MECHANISM_PREREGISTRATION.md` 预注册。该设计明确区分运行时 KEEP_LAST depth、编译期 history capacity 与 publisher resource limits，并冻结 4 x 3 因子、随机化、主终点及多重比较处理。
+
+旧 `run_e6_heartbeat_sweep.sh` 会把 `--loss` 和 `--condition` 错当作参数值，且 `sweep_param.sh` 会直接修改 tracked source；二者不得用于正式数据。P3 只有在参数化固件、内存 pilot、discovery 恢复和 22 条验证全部通过后才能执行。

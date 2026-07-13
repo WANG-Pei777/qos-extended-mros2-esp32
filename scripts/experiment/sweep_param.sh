@@ -19,6 +19,20 @@ if [ ${#VALUES[@]} -eq 0 ]; then
     exit 1
 fi
 
+for VALUE in "${VALUES[@]}"; do
+    if [[ "${VALUE}" == --* ]]; then
+        echo "[ERROR] Unsupported option passed as a sweep value: ${VALUE}" >&2
+        echo "[ERROR] See docs/benchmark/ROUND6_MECHANISM_PREREGISTRATION.md" >&2
+        exit 2
+    fi
+done
+
+if [ "${FORMAL_RUN:-0}" = "1" ]; then
+    echo "[ERROR] This legacy source-mutating sweep is prohibited for formal runs." >&2
+    echo "[ERROR] See docs/benchmark/ROUND6_MECHANISM_PREREGISTRATION.md" >&2
+    exit 2
+fi
+
 echo "========================================="
 echo "sweep_param.sh"
 echo "========================================="
