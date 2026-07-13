@@ -56,6 +56,12 @@ The boot log, build metadata, and result manifest must agree. Before the matrix 
 
 No formal run may edit a tracked source file in place.
 
+The preregistered set is built with `scripts/experiment/build_round6_variants.py`.
+The builder requires a clean worktree, enables a commit-derived
+`SOURCE_DATE_EPOCH`, verifies CMake cache and component compile definitions,
+archives content-addressed binaries and linker evidence, and emits the frozen
+10-superblock schedule from seed `20260714`.
+
 ### Implemented Gate Evidence
 
 Commit `f0ea69e` exposes all five controls as validated CMake cache parameters and rejects depth above capacity or sample limits below capacity. Both the default build and the maximum preregistered combination (`depth=40`, `capacity=48`, `heartbeat=250 ms`, `max_samples=48`, `max_bytes=65536`) compile with the expected definitions in the application and RTPS components.
