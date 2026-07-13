@@ -17,6 +17,11 @@ SPEC.loader.exec_module(MODULE)
 
 
 class Round6SmokeTests(unittest.TestCase):
+    def test_capture_window_rejects_truncated_behavior_phase(self):
+        with self.assertRaisesRegex(ValueError, "at least 45 seconds"):
+            MODULE.validate_capture_seconds(30)
+        self.assertEqual(MODULE.validate_capture_seconds(60), 60)
+
     @mock.patch.object(
         MODULE.subprocess,
         "check_output",

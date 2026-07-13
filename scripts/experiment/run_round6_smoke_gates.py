@@ -80,6 +80,14 @@ def validate_serial(serial_text, parameters, app_version):
     return missing
 
 
+def validate_capture_seconds(value):
+    if value < 45:
+        raise ValueError(
+            "capture window must be at least 45 seconds for the complete behavior phase"
+        )
+    return value
+
+
 def require_clean_harness(project_root):
     if git_output(project_root, "status", "--porcelain"):
         raise SystemExit("smoke gates require a clean harness worktree")
@@ -363,7 +371,7 @@ def parse_args():
     parser.add_argument("--serial-port", default="/dev/ttyUSB0")
     parser.add_argument("--board-ip", default="10.219.224.107")
     parser.add_argument("--interface", default="eth1")
-    parser.add_argument("--capture-seconds", type=int, default=30)
+    parser.add_argument("--capture-seconds", type=int, default=60)
     parser.add_argument("--runs-per-cell", type=int, default=3)
     parser.add_argument("--flash-baud", type=int, default=460800)
     parser.add_argument(
@@ -376,6 +384,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+    try:
+        validate_capture_seconds(args.capture_seconds)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     project_root = args.project_root.resolve()
     set_root = args.firmware_set.resolve()
     require_clean_harness(project_root)
