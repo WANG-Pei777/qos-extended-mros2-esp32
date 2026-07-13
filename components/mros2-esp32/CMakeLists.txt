@@ -48,6 +48,10 @@ idf_component_register(
         INCLUDE_DIRS ${INCS}
         REQUIRES nvs_flash esp_wifi)
 
+target_compile_definitions(${COMPONENT_LIB} PRIVATE
+        MROS2_RTPS_HISTORY_CAPACITY=${MROS2_RTPS_HISTORY_CAPACITY}
+        MROS2_RTPS_HEARTBEAT_PERIOD_MS=${MROS2_RTPS_HEARTBEAT_PERIOD_MS})
+
 set(MROS2_TEMPLATES_HPP "${MROS2_QOS_ROOT}/platform/templates.hpp")
 
 add_custom_command(

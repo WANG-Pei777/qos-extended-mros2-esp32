@@ -12,6 +12,7 @@ sdkconfig
 sdkconfig.old
 dependencies.lock
 managed_components/
+workspace/qos_eval/build*/
 
 # Analysis reports
 build/analysis_reports/

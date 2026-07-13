@@ -8,6 +8,11 @@ SERIAL_LOG="${QOS_VERIFY_SERIAL_LOG:-/tmp/mros2_qos_serial.log}"
 HOST_LOG="${QOS_VERIFY_HOST_LOG:-/tmp/mros2_qos_host.log}"
 TOPIC_LOG="${QOS_VERIFY_TOPIC_LOG:-/tmp/mros2_qos_topic.log}"
 EXPECT_REPLY_RELIABILITY="${QOS_VERIFY_EXPECT_REPLY_RELIABILITY:-RELIABLE}"
+EXPECT_HISTORY_DEPTH="${QOS_VERIFY_EXPECT_HISTORY_DEPTH:-5}"
+EXPECT_HISTORY_CAPACITY="${QOS_VERIFY_EXPECT_HISTORY_CAPACITY:-10}"
+EXPECT_HEARTBEAT_MS="${QOS_VERIFY_EXPECT_HEARTBEAT_MS:-4000}"
+EXPECT_RESOURCE_MAX_SAMPLES="${QOS_VERIFY_EXPECT_RESOURCE_MAX_SAMPLES:-30}"
+EXPECT_RESOURCE_MAX_BYTES="${QOS_VERIFY_EXPECT_RESOURCE_MAX_BYTES:-12288}"
 MIN_RX="${QOS_VERIFY_MIN_RX:-10}"
 HOST_SETTLE_SECONDS="${QOS_VERIFY_HOST_SETTLE_SECONDS:-8}"
 DAEMON_SETTLE_SECONDS="${QOS_VERIFY_DAEMON_SETTLE_SECONDS:-2}"
@@ -128,7 +133,7 @@ echo "[verify] capturing topic info"
 
 echo
 echo "===== Serial Key Lines ====="
-grep -E 'Reliability:|Durability|History|Deadline|Lifespan|Liveliness|Resources|Match state|matched|Warm-up|VALIDATION NOT READY|Echo reply|Reader heartbeat|Writer activity|finite lease behavior|RTPS QoS State|History cache|Writer deadline|Writer lifespan|Writer resource|Reader deadline|Reader received|Reader accepted-before-match|Reader out-of-order|Reader unmatched-writer|TX:|RX:|Packets Dropped|All phases complete|Resource stats|Rejected:' "${SERIAL_LOG}" || true
+grep -E 'Reliability:|Durability|History|Deadline|Lifespan|Liveliness|Resources|Mechanism|Match state|matched|Warm-up|VALIDATION NOT READY|Echo reply|Reader heartbeat|Writer activity|finite lease behavior|RTPS QoS State|History cache|Writer deadline|Writer lifespan|Writer resource|Reader deadline|Reader received|Reader accepted-before-match|Reader out-of-order|Reader unmatched-writer|TX:|RX:|Packets Dropped|All phases complete|Resource stats|Rejected:' "${SERIAL_LOG}" || true
 
 echo
 echo "===== Host Key Lines ====="
@@ -191,11 +196,11 @@ check "QoS 6 Liveliness: AUTOMATIC visible on reply path" "topic_section_has '/q
 
 echo
 echo "===== ESP32 Behavior Evidence ====="
-check "History behavior: KEEP_LAST(5) configured and enforced" "grep -q 'History    : KEEP_LAST(5)' '${SERIAL_LOG}' && grep -q 'History KEEP_LAST enforcement PASSED' '${SERIAL_LOG}'"
+check "History behavior: KEEP_LAST(${EXPECT_HISTORY_DEPTH}) configured and enforced" "grep -q 'History    : KEEP_LAST(${EXPECT_HISTORY_DEPTH})' '${SERIAL_LOG}' && grep -q 'Mechanism    : capacity=${EXPECT_HISTORY_CAPACITY}, heartbeat=${EXPECT_HEARTBEAT_MS}ms' '${SERIAL_LOG}' && grep -q 'History KEEP_LAST enforcement PASSED' '${SERIAL_LOG}'"
 check "Deadline behavior: missed deadline detected" "grep -q 'Deadline missed: YES' '${SERIAL_LOG}'"
 check "Lifespan behavior: expired and fresh message checks passed" "grep -q 'Lifespan check PASSED: expired message correctly identified' '${SERIAL_LOG}' && grep -q 'Lifespan check PASSED: fresh message accepted' '${SERIAL_LOG}'"
 check "Liveliness behavior: lease activity and finite lease checks passed" "grep -q 'Liveliness lease check PASSED' '${SERIAL_LOG}' && grep -q 'Liveliness finite lease behavior PASSED' '${SERIAL_LOG}'"
-check "QoS 7 Resource Limits behavior: burst rejection visible" "grep -q 'Resources  : 30 samples, 12288 bytes' '${SERIAL_LOG}' && grep -q 'Rejected during burst:' '${SERIAL_LOG}' && grep -q 'Resource stats:' '${SERIAL_LOG}'"
+check "QoS 7 Resource Limits behavior: burst rejection visible" "grep -q 'Resources  : ${EXPECT_RESOURCE_MAX_SAMPLES} samples, ${EXPECT_RESOURCE_MAX_BYTES} bytes' '${SERIAL_LOG}' && grep -q 'Rejected during burst:' '${SERIAL_LOG}' && grep -q 'Resource stats:' '${SERIAL_LOG}'"
 
 echo
 echo "[verify] logs:"

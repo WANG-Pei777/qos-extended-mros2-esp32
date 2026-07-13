@@ -23,6 +23,37 @@
 #include <cstring>
 #include <limits>
 
+#ifndef MROS2_QOS_HISTORY_DEPTH
+#define MROS2_QOS_HISTORY_DEPTH 5
+#endif
+#ifndef MROS2_RTPS_HISTORY_CAPACITY
+#define MROS2_RTPS_HISTORY_CAPACITY 10
+#endif
+#ifndef MROS2_RTPS_HEARTBEAT_PERIOD_MS
+#define MROS2_RTPS_HEARTBEAT_PERIOD_MS 4000
+#endif
+#ifndef MROS2_QOS_RESOURCE_MAX_SAMPLES
+#define MROS2_QOS_RESOURCE_MAX_SAMPLES 30
+#endif
+#ifndef MROS2_QOS_RESOURCE_MAX_BYTES
+#define MROS2_QOS_RESOURCE_MAX_BYTES 12288
+#endif
+
+static_assert(MROS2_QOS_HISTORY_DEPTH > 0,
+              "MROS2_QOS_HISTORY_DEPTH must be positive");
+static_assert(MROS2_QOS_HISTORY_DEPTH <= MROS2_RTPS_HISTORY_CAPACITY,
+              "Runtime history depth exceeds RTPS history capacity");
+static_assert(MROS2_QOS_RESOURCE_MAX_SAMPLES >= MROS2_RTPS_HISTORY_CAPACITY,
+              "Sample resource limit must not bind RTPS history capacity");
+
+static constexpr uint32_t kHistoryDepth = MROS2_QOS_HISTORY_DEPTH;
+static constexpr uint32_t kHistoryCapacity = MROS2_RTPS_HISTORY_CAPACITY;
+static constexpr uint32_t kHeartbeatPeriodMs =
+    MROS2_RTPS_HEARTBEAT_PERIOD_MS;
+static constexpr uint32_t kResourceMaxSamples =
+    MROS2_QOS_RESOURCE_MAX_SAMPLES;
+static constexpr uint32_t kResourceMaxBytes = MROS2_QOS_RESOURCE_MAX_BYTES;
+
 // Most ESP32-S3 dev boards place the built-in addressable RGB LED on GPIO48.
 // Clear it at boot so the hardware validation workflow is not distracted by the bright white LED.
 static void turn_off_onboard_rgb()
@@ -202,7 +233,7 @@ public:
 
 static DeadlineManager deadline_mgr(100, 200);  // 100ms deadline, check every 200 msgs (~200ms)
 static LifespanManager lifespan_mgr(2000);       // 2s lifespan
-static ResourceLimitsManager resource_mgr(30, 12288);
+static ResourceLimitsManager resource_mgr(kResourceMaxSamples, kResourceMaxBytes);
 static PerfStats perf;
 static std::atomic<uint32_t> reply_count{0};
 static SequenceTracker reply_sequences;
@@ -321,12 +352,14 @@ extern "C" void app_main(void)
   printf("  1. Reliability: %s uplink, %s reply path\n",
          kExperimentReliabilityName, kExperimentReliabilityName);
   printf("  2. Durability : VOLATILE\n");
-  printf("  3. History    : KEEP_LAST(5)\n");
+  printf("  3. History    : KEEP_LAST(%u)\n", kHistoryDepth);
   printf("  4. Deadline   : %ums\n", deadline_mgr.getDeadlineMs());
   printf("  5. Lifespan   : %ums (RTPS cache aging)\n", lifespan_mgr.getLifespanMs());
   printf("  6. Liveliness : AUTOMATIC (lease=3000ms)\n");
   printf("  7. Resources  : %u samples, %u bytes\n",
          resource_mgr.getMaxSamples(), resource_mgr.getMaxBytes());
+  printf("  Mechanism    : capacity=%u, heartbeat=%ums\n",
+         kHistoryCapacity, kHeartbeatPeriodMs);
   printf("============================================\n\n");
 
   /* Phase 1: Network + Init */
@@ -346,7 +379,7 @@ extern "C" void app_main(void)
   pub_qos.reliability = kExperimentReliability;
   pub_qos.durability = rtps::DurabilityKind_t::VOLATILE;
   pub_qos.history = mros2::HistoryKind::KEEP_LAST;
-  pub_qos.depth = 5;
+  pub_qos.depth = kHistoryDepth;
   pub_qos.max_samples = resource_mgr.getMaxSamples();
   pub_qos.max_bytes = resource_mgr.getMaxBytes();
 

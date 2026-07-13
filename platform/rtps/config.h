@@ -27,6 +27,14 @@ Author: i11 - Embedded Software, RWTH Aachen University
 
 #include "rtps/common/types.h"
 
+#ifndef MROS2_RTPS_HISTORY_CAPACITY
+#define MROS2_RTPS_HISTORY_CAPACITY 10
+#endif
+
+#ifndef MROS2_RTPS_HEARTBEAT_PERIOD_MS
+#define MROS2_RTPS_HEARTBEAT_PERIOD_MS 4000
+#endif
+
 namespace rtps
 {
 
@@ -77,7 +85,11 @@ const uint8_t MAX_NUM_UNMATCHED_REMOTE_READERS = 15;
 const uint8_t MAX_NUM_READER_CALLBACKS = 5;
 
 const uint8_t HISTORY_SIZE_STATELESS = 2;
-const uint8_t HISTORY_SIZE_STATEFUL = 10;
+static_assert(MROS2_RTPS_HISTORY_CAPACITY > 0 &&
+                  MROS2_RTPS_HISTORY_CAPACITY <= 255,
+              "MROS2_RTPS_HISTORY_CAPACITY must fit uint8_t");
+const uint8_t HISTORY_SIZE_STATEFUL =
+    static_cast<uint8_t>(MROS2_RTPS_HISTORY_CAPACITY);
 
 const uint8_t MAX_TYPENAME_LENGTH = 40;
 const uint8_t MAX_TOPICNAME_LENGTH = 40;
@@ -87,7 +99,11 @@ const int THREAD_POOL_WRITER_STACKSIZE = 4096; // byte
 const int THREAD_POOL_READER_STACKSIZE = 4096; // byte
 const uint16_t SPDP_WRITER_STACKSIZE = 4096;   // byte
 
-const uint16_t SF_WRITER_HB_PERIOD_MS = 4000;
+static_assert(MROS2_RTPS_HEARTBEAT_PERIOD_MS > 0 &&
+                  MROS2_RTPS_HEARTBEAT_PERIOD_MS <= 65535,
+              "MROS2_RTPS_HEARTBEAT_PERIOD_MS must fit uint16_t");
+const uint16_t SF_WRITER_HB_PERIOD_MS =
+    static_cast<uint16_t>(MROS2_RTPS_HEARTBEAT_PERIOD_MS);
 const uint16_t SPDP_RESEND_PERIOD_MS = 1000;
 const uint8_t SPDP_CYCLECOUNT_HEARTBEAT =
     2; // skip x SPDP rounds before checking liveliness
