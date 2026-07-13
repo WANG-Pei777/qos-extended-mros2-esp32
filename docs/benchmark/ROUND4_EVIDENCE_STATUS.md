@@ -1,131 +1,119 @@
 # ROUND4 Evidence Status
 
-## Main Transport Result Set
+## Formal Result Sets
 
-Current host-to-board result set:
+Historical host-to-board matrix:
 
 - result directory: `results/experiments/20260711_net37`
-- source commit recorded in manifests: `64e7ec710b3342b838b9561ec5808e882c082efe`
+- source commit in manifests: `64e7ec710b3342b838b9561ec5808e882c082efe`
 - board IP: `10.37.12.107`
-- repetitions: 30 accepted units per QoS/loss cell
 - direction: host-to-board netem only
-- Best Effort firmware SHA-256: `4229fb5b5023a869c7fb0b8f93b103a2b692b7c99cb66d3f757ab3f06b4cc5a7`
-- Reliable firmware SHA-256: `18074dae39d6403a2f9b8622a6e547ea4dfd5591fe0dc8d19cf9971b9df675c7`
+- repetitions: 30 accepted runs per QoS/loss cell
+- RTT granularity: run-level summaries
 
-Required checks passed:
-
-- `validate_round4.py` passes for all ten formal CSVs.
-- `audit_round4_result_set.py` passes for the full ten-condition matrix.
-- `summarize_round4.py` generated condition and effect-size tables.
-- `plot_round4_transport.py` generated delivery, RTT, and effect-size figures.
-- `summarize_rtps_pcap.py` confirms RTPS DATA, HEARTBEAT, and ACKNACK evidence
-  in representative 0 percent and 15 percent captures.
-- `analyze_rtps_timeline.py` generated packet-level direction, ACKNACK bitmap,
-  and RTPS counter summaries for all ten host-to-board formal captures.
-
-Current board-to-host result set:
+Historical board-to-host matrix:
 
 - result directory: `results/experiments/20260712_b2h_net37`
-- source commit recorded in manifests: `4837a369bad28dc8b84e495f8cba22d6c556a1fd`
+- source commit in manifests: `4837a369bad28dc8b84e495f8cba22d6c556a1fd`
 - board IP: `10.37.12.107`
-- repetitions: 30 accepted units per QoS/loss cell
 - direction: board-to-host ingress `tc gact random` only
-- Best Effort firmware SHA-256: `199f57a5d60074f48475c9dff580986ab004d6a226e34a92220a3e940404e33b`
-- Reliable firmware SHA-256: `4c184540f1875c1bdf8e7d02bc01fb58c46d9f0e74bc335c5a1feb24530a5bea`
+- repetitions: 30 accepted runs per QoS/loss cell
+- RTT granularity: run-level summaries
 
-Required checks passed:
-
-- `validate_round4.py` passes for all ten board-to-host formal CSVs.
-- `audit_round4_result_set.py --direction board_to_host` passes for the full
-  ten-condition matrix.
-- `summarize_round4.py` generated board-to-host condition and effect-size tables.
-- `plot_round4_transport.py` generated direction-labeled delivery, RTT, and
-  effect-size figures.
-- `summarize_rtps_pcap.py` summarizes the ten complete board-to-host formal
-  captures. The interrupted Best Effort 15 percent capture is excluded from the
-  analysis summary; the complete rerun is
-  `20260712_104142_round4_transport_best_effort_15pct_board_to_host.pcapng`.
-- `analyze_rtps_timeline.py` generated packet-level direction, ACKNACK bitmap,
-  and RTPS counter summaries for all ten complete board-to-host captures.
-
-Current per-message RTT key-cell rerun:
+Current board-to-host per-message RTT matrix:
 
 - result directory: `results/experiments/20260712_rtt_samples_b2h_net219_v2`
-- source commit recorded in manifests: `059d483e9c76247b0cefd22e926a0996d8d9cc32`
+- source commit in every manifest:
+  `d7f8ab446240e93b8b05a27816313f1338c2a629`
 - board IP: `10.219.224.107`
 - host IP: `10.219.224.195`
-- direction/loss: board-to-host ingress `tc gact random`, 15 percent only
-- repetitions: 30 accepted units for Reliable and 30 for Best Effort
-- Best Effort firmware SHA-256: `c2c8acaca9444d12fa42d58e194b36ba7babbd08509f5368578c4f518c069a9f`
-- Reliable firmware SHA-256: `c4873bd46e92546bd00c4848f6f4143f7834cd39dc917039db81221bfad5ea30`
+- direction: board-to-host ingress `tc gact random` only
+- loss levels: 0, 1, 5, 10, and 15 percent
+- repetitions: 30 accepted runs per QoS/loss cell, 300 total runs
+- per-message RTT samples: 11,054 total
+- Best Effort firmware SHA-256:
+  `4ad1d876df0b459111905a365804f3572b1e504dcd26d4470b67f8cd3ab3a370`
+- Reliable firmware SHA-256:
+  `76f797528786683ffe9f1e16c734b39cb4bcdfc086cbc8db03695bfb244491d0`
 
-Required checks passed:
+## Validation Status
 
-- `validate_round4.py` passes for both 15 percent CSVs.
-- `_rtt_samples.csv` sidecar row counts equal the sum of `rtt_count` in the
-  corresponding main CSVs.
-- `summarize_round4_rtt_samples.py` generated true per-message RTT mean,
-  median, p95, p99, and max summaries.
-- `summarize_round4.py`, `plot_round4_transport.py`, `summarize_rtps_pcap.py`,
-  and `analyze_rtps_timeline.py` generated matched analysis artifacts for the
-  15 percent key-cell rerun.
+The current board-to-host matrix passes the following checks:
+
+- `audit_round4_result_set.py --direction board_to_host` reports
+  `PASS: 10 conditions, 30 rows each`.
+- Every main CSV has 30 rows.
+- For every cell, `_rtt_samples.csv` row count equals the sum of `rtt_count`
+  in the corresponding main CSV.
+- Every manifest records the same source commit and the expected QoS-specific
+  firmware SHA-256.
+- `summarize_round4.py` generated run-level condition and independent-group
+  bootstrap effect tables.
+- `summarize_round4_rtt_samples.py` generated per-message RTT mean, median,
+  p95, and p99 run-cluster bootstrap intervals plus Reliable-minus-Best-Effort
+  effect intervals. Runs are resampled as clusters with messages kept inside
+  their originating run.
+- `plot_round4_transport.py` generated delivery, RTT, and QoS-effect figures.
+- Ten final PCAP SHA-256 values match
+  `TRANSPORT_INGRESS_GACT_LEDGER.md`.
+- `summarize_rtps_pcap.py` and `analyze_rtps_timeline.py` generated matched
+  RTPS capture and packet-level timeline summaries for all ten cells.
 
 ## Current Interpretation
 
-The current host-to-board transport result does not support a broad claim that
-Reliable improves delivery over Best Effort. Delivery differences are small and
-their bootstrap confidence intervals cross zero at 1, 5, 10, and 15 percent
-loss. At 0 percent loss, both modes deliver 100 percent in this setup.
+The host-to-board result does not support a broad claim that Reliable improves
+delivery over Best Effort. Delivery effects are small and the bootstrap
+confidence intervals cross zero at all injected-loss levels.
 
-Reliable also does not consistently reduce RTT in this result set. The 1
-percent condition shows higher Reliable mean RTT, while the other loss levels
-are close or have confidence intervals that cross zero. The 15 percent Reliable
-RTT distribution has a visible high-tail effect in the run-level p95 summary.
+The current board-to-host matrix shows a stronger asymmetry. Reliable-minus-
+Best-Effort delivery differences are -1.583, -1.417, -3.000, and -6.417
+percentage points at 1, 5, 10, and 15 percent loss. Only the 15 percent interval
+excludes zero: -6.417 percentage points, 95 percent CI [-11.333, -1.667].
+This does not support a broad delivery advantage for Reliable.
 
-These results are publishable as a careful negative/nuanced finding only if the
-paper claim is framed narrowly: mROS2 QoS behavior under this host-to-board
-RTPS/UDP impairment setup, with observed delivery/latency tradeoffs and wire
-evidence from pcap. They are not sufficient for a generalized DDS QoS
-reliability claim.
+Reliable has substantially higher run-level mean RTT under nonzero
+board-to-host loss. Reliable-minus-Best-Effort differences are 232.727,
+478.336, 916.022, and 1205.655 ms at 1, 5, 10, and 15 percent loss; all four
+bootstrap intervals are above zero. At 0 percent, the 0.792 ms difference has
+a confidence interval that crosses zero.
 
-The board-to-host impairment direction shows a stronger directional asymmetry.
-Best Effort delivery declines roughly with the injected ingress loss while RTT
-stays near 20 ms through 15 percent loss. Reliable has much heavier RTT tails:
-Reliable-minus-Best-Effort mean RTT differences are about 134 ms at 1 percent,
-465 ms at 5 percent, 957 ms at 10 percent, and 1190 ms at 15 percent, with
-bootstrap intervals well above zero. Reliable delivery is also lower than Best
-Effort at 5 percent and 15 percent in this result set.
+The per-message analysis exposes the tail shape. At 15 percent loss, Reliable
+has 932 samples with median 551.477 ms, p95 4796.700 ms, and p99 5833.193 ms.
+Best Effort has 1009 samples with median 17.053 ms, p95 31.747 ms, and p99
+105.674 ms. The Reliable-minus-Best-Effort p95 difference is 4764.953 ms,
+with a run-cluster bootstrap 95 percent CI [3458.286, 5071.694].
 
-These board-to-host results support a narrow claim that, in this ESP32/ROS 2
-testbed and impairment direction, Reliable can trade lower effective delivery
-and substantially higher latency tails for retransmission-oriented behavior
-rather than delivering a simple reliability win. This still needs protocol-level
-pcap inspection before attributing the effect to a specific RTPS mechanism.
-Current timeline summaries separate packet direction and expose ACKNACK bitmap
-presence, but they still include discovery/control traffic and are not yet a
-per-application-sample retransmission reconstruction.
+Reliable p95 is also higher at 1, 5, and 10 percent. The corresponding
+differences and 95 percent CIs are 2294.141 [1.642, 2640.703], 2730.941
+[2063.270, 3059.703], and 2967.935 [2648.872, 3303.455] ms. The 1 percent
+result is boundary-level evidence because its lower interval endpoint is close
+to zero; the 5 through 15 percent intervals are much more stable. At 0 percent,
+Reliable p95 is lower by 5.544 ms, 95 percent CI [-9.616, -2.440].
 
-Per-message RTT support has been added for future reruns: firmware now prints
-`RTT_SAMPLE seq=<n> rtt_us=<us>` for each valid measured reply, `run_matrix.sh`
-writes `_rtt_samples.csv` sidecars, and `summarize_round4_rtt_samples.py`
-computes per-message mean/median/p95/p99/max summaries. Existing formal result
-sets were collected before this instrumentation, so their RTT-tail values remain
-per-run summary statistics unless those cells are rerun.
+The PCAP summaries prove that RTPS DATA, HEARTBEAT, and ACKNACK traffic was
+observed on the wire. They do not identify application entities or reconstruct
+sample-level retransmission. Discovery and unrelated control traffic remain in
+the counts, so a specific RTPS mechanism must remain a hypothesis.
 
-The 15 percent board-to-host key cell has now been rerun with per-message RTT
-instrumentation in `20260712_rtt_samples_b2h_net219_v2`. In that rerun, Best
-Effort has 1042 per-message RTT samples with p95 35.276 ms and p99 76.168 ms.
-Reliable has 950 per-message RTT samples with p95 3267.115 ms and p99 6222.092
-ms. Reliable-minus-Best-Effort mean RTT is 1136.828 ms by the run-level
-bootstrap summary, and Reliable delivery is 7.667 percentage points lower.
+The defensible paper claim is narrow: in this ESP32/mROS2 and ROS 2 testbed,
+board-to-host ingress impairment produced a Reliable latency-tail penalty
+without a measured delivery advantage, and the effect differed from the
+host-to-board impairment result. This is a testbed observation, not a general
+DDS reliability theorem.
 
 ## Remaining Gaps Before A Top-Tier Submission
 
-- Rerun the remaining 0, 1, 5, and 10 percent board-to-host cells with the
-  `RTT_SAMPLE` firmware if the paper needs full per-message RTT curves.
-- Reconstruct application-sample-level RTPS behavior from pcap before making a
-  specific retransmission or protocol-overhead claim.
-- Repeat the matrix on at least one independent network window or physical
-  environment to quantify environment sensitivity.
-- Add a claim-to-evidence table that maps every paper claim to CSV, manifest,
-  pcap, figure, and analysis-script paths.
+1. Run and archive the full 22-case verification suite on the exact
+   instrumented firmware binaries used by the current matrix.
+2. Reconstruct application-sample-level RTPS sequence, HEARTBEAT, ACKNACK
+   bitmap, and retransmission timelines before attributing the tail to a
+   specific mechanism.
+3. Test pre-registered mechanism interventions, such as writer history depth
+   and heartbeat period, only after confirming that the implementation exposes
+   and records those controls.
+4. Repeat at least the 0, 5, and 15 percent cells in an independent network
+   window or physical environment.
+5. Rerun host-to-board cells with per-message RTT if the paper compares tail
+   distributions across directions.
+6. Add a semantically aligned external baseline before making comparative
+   claims about mROS2 versus another ROS 2/DDS implementation.
