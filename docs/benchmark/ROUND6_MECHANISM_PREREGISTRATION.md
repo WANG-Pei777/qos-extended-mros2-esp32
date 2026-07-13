@@ -1,6 +1,6 @@
 # Round 6 Mechanism Experiment Preregistration
 
-**Status:** frozen design. Endpoint discovery and the 22-assertion source-equivalent baseline verification passed after the AP restart on 2026-07-13. Independent build parameters and the maximum-depth memory pilot now pass. Formal execution remains blocked on immutable archival of all 12 variants and per-cell smoke gates.
+**Status:** READY FOR FORMAL EXECUTION. The frozen design, endpoint discovery, source-equivalent baseline verification, independent build parameters, maximum-depth memory pilot, immutable 12-variant archive, reproducibility check, and all per-cell smoke gates have passed.
 
 The legacy parameter-sweep scripts are not authorized for formal data collection. This document freezes the hypotheses, factors, execution order, outcomes, and analysis before new mechanism data are observed.
 
@@ -67,6 +67,10 @@ archives content-addressed binaries and linker evidence, and emits the frozen
 Commit `f0ea69e` exposes all five controls as validated CMake cache parameters and rejects depth above capacity or sample limits below capacity. Both the default build and the maximum preregistered combination (`depth=40`, `capacity=48`, `heartbeat=250 ms`, `max_samples=48`, `max_bytes=65536`) compile with the expected definitions in the application and RTPS components.
 
 The maximum combination passed the 22-assertion hardware smoke with a `40/40` history cache, 58 TX, 58 RX, zero packet drops, and 131,872 bytes free after the behavior phases. It adds 13,376 bytes of static D/IRAM relative to the default build and leaves 203,633 bytes of static D/IRAM available. The pilot firmware, map, logs, and SHA manifest are archived under `results/experiments/20260713_round6_memory_pilot_d40_h250`. This pilot is gate evidence and is not part of the formal factorial dataset.
+
+The formal firmware set is archived under `results/experiments/20260713_round6_firmware_set_5dabf7e`. It contains 12 unique firmware SHA-256 values from source commit `5dabf7e`, 96 hashed build artifacts, and a 120-visit schedule. An independent rebuild of `d05_h0250` reproduced the firmware, bootloader, and partition-table SHA values exactly.
+
+All 12 cells then passed three hardware/capture smoke runs each: 36 accepted runs, 22/22 assertions per run, and nonempty board UDP evidence in every PCAP. The audit revalidated 216 run files. One preliminary 30-second capture was retained in the rejection ledger because its harness window ended before the final behavior summary; it is excluded from the 36 accepted smoke runs. Smoke evidence is gate-only and must not enter the formal factorial analysis.
 
 ## Randomization And Independence
 
