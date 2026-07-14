@@ -59,15 +59,11 @@ def derive_wire_metrics(events, run_id):
         key=lambda event: event["time_s"],
     )
     unique_heartbeats = []
-    seen_heartbeats = set()
     for event in heartbeat_events:
-        count = event.get("heartbeat_count")
-        key = (
-            event.get("source_guid", ""),
-            count if count is not None else event["frame_number"],
-        )
-        if key not in seen_heartbeats:
-            seen_heartbeats.add(key)
+        if (
+            not unique_heartbeats
+            or event["time_s"] - unique_heartbeats[-1]["time_s"] >= 0.010
+        ):
             unique_heartbeats.append(event)
     heartbeats = [event["time_s"] for event in unique_heartbeats]
     heartbeat_intervals = [
