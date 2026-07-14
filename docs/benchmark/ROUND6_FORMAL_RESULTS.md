@@ -16,6 +16,9 @@ The accepted-run ledger SHA-256 is
 `b7b99e0a6ef43fac7fee3920f31b4d1c12cebff88609471500f9f9d48f01f39e`.
 The complete design-manifest SHA-256 is
 `c55619a4dd913ed51e23181520ce1b7b53cfe4b16001000ee5fde51fb2a85909`.
+The deterministic release seal covers 2,504 files and 122,055,179 bytes;
+its tree SHA-256 is
+`8c7611249f242b7c84858e0975d14b5bd6d72b4753b8b275eeb230cc1c82c958`.
 
 The one exclusion occurred in block 5, visit 3. WSL `eth1` became unavailable
 after the first run, and five subsequent `tshark` preflight attempts exited
@@ -109,6 +112,8 @@ results.
 - `analysis/complete_1c99afa/round6_complete_contrasts.csv`
 - `analysis/complete_1c99afa/round6_complete_outcomes.png`
 - `analysis/complete_1c99afa/round6_complete_outcomes.pdf`
+- `release_file_manifest.csv`
+- `release_seal.json`
 
 All earlier dry-run or superseded analysis directories are exploratory artifacts;
 `complete_1c99afa` is the authoritative confirmatory output.
