@@ -129,7 +129,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    local_start = require_collection_window()
+    try:
+        local_start = require_collection_window()
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     validate_capture_seconds(args.capture_seconds)
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", args.results_id):
         raise SystemExit("results-id contains unsupported characters")
