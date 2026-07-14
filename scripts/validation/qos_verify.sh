@@ -8,6 +8,8 @@ SERIAL_LOG="${QOS_VERIFY_SERIAL_LOG:-/tmp/mros2_qos_serial.log}"
 HOST_LOG="${QOS_VERIFY_HOST_LOG:-/tmp/mros2_qos_host.log}"
 TOPIC_LOG="${QOS_VERIFY_TOPIC_LOG:-/tmp/mros2_qos_topic.log}"
 EXPECT_REPLY_RELIABILITY="${QOS_VERIFY_EXPECT_REPLY_RELIABILITY:-RELIABLE}"
+EXPECT_UPLINK_RELIABILITY="${QOS_VERIFY_EXPECT_UPLINK_RELIABILITY:-${EXPECT_REPLY_RELIABILITY}}"
+HOST_IMPLEMENTATION="${QOS_VERIFY_HOST_IMPLEMENTATION:-python}"
 EXPECT_HISTORY_DEPTH="${QOS_VERIFY_EXPECT_HISTORY_DEPTH:-5}"
 EXPECT_HISTORY_CAPACITY="${QOS_VERIFY_EXPECT_HISTORY_CAPACITY:-10}"
 EXPECT_HEARTBEAT_MS="${QOS_VERIFY_EXPECT_HEARTBEAT_MS:-4000}"
@@ -38,6 +40,31 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   exit 0
 fi
 
+case "${EXPECT_REPLY_RELIABILITY}" in
+  RELIABLE) HOST_QOS_MODE="reliable" ;;
+  BEST_EFFORT) HOST_QOS_MODE="best_effort" ;;
+  *)
+    echo "[verify] expected reply reliability must be RELIABLE or BEST_EFFORT" >&2
+    exit 2
+    ;;
+esac
+
+case "${EXPECT_UPLINK_RELIABILITY}" in
+  RELIABLE|BEST_EFFORT) ;;
+  *)
+    echo "[verify] expected uplink reliability must be RELIABLE or BEST_EFFORT" >&2
+    exit 2
+    ;;
+esac
+
+case "${HOST_IMPLEMENTATION}" in
+  python|cpp) ;;
+  *)
+    echo "[verify] host implementation must be python or cpp" >&2
+    exit 2
+    ;;
+esac
+
 if [ ! -e "${PORT}" ]; then
   echo "[verify] serial port not found: ${PORT}" >&2
   exit 1
@@ -53,8 +80,10 @@ export ROS_LOCALHOST_ONLY="${ROS_LOCALHOST_ONLY:-0}"
 echo "[verify] project=${PROJECT_ROOT}"
 echo "[verify] port=${PORT}"
 echo "[verify] capture_seconds=${CAPTURE_SECONDS}"
+echo "[verify] qos=${EXPECT_UPLINK_RELIABILITY}/${EXPECT_REPLY_RELIABILITY} host=${HOST_IMPLEMENTATION}"
 
 pgrep -f "${PROJECT_ROOT}/workspace/qos_eval/echo_reply.py" | xargs -r kill || true
+pgrep -f "${PROJECT_ROOT}/tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node" | xargs -r kill || true
 pgrep -f "idf_monitor.py -p ${PORT}" | xargs -r kill || true
 pgrep -f "esp_idf_monitor -p ${PORT}" | xargs -r kill || true
 pgrep -f "idf.py -p ${PORT} monitor" | xargs -r kill || true
@@ -73,10 +102,13 @@ fi
 rm -f "${SERIAL_LOG}" "${HOST_LOG}" "${TOPIC_LOG}"
 
 echo "[verify] starting ROS2 echo host"
-QOS_VALIDATION_SKIP_KILL=1 "${PROJECT_ROOT}/scripts/validation/qos_host.sh" all \
+QOS_VALIDATION_SKIP_KILL=1 \
+QOS_HOST_QOS_MODE="${HOST_QOS_MODE}" \
+QOS_HOST_IMPLEMENTATION="${HOST_IMPLEMENTATION}" \
+  "${PROJECT_ROOT}/scripts/validation/qos_host.sh" all \
   > "${HOST_LOG}" 2>&1 &
 HOST_PID=$!
-trap 'kill ${HOST_PID} 2>/dev/null || true' EXIT
+trap 'kill ${HOST_PID} 2>/dev/null || true; wait ${HOST_PID} 2>/dev/null || true' EXIT
 
 sleep "${HOST_SETTLE_SECONDS}"
 if ! kill -0 "${HOST_PID}" 2>/dev/null; then
@@ -177,7 +209,7 @@ check "ESP32 publisher matched ROS2 subscriber" "grep -q 'publisher matched with
 check "ESP32 subscriber matched ROS2 publisher" "grep -q 'subscriber matched with remote publisher' '${SERIAL_LOG}'"
 check "No VALIDATION NOT READY marker" "test -z \"\$(grep -F 'VALIDATION NOT READY' '${SERIAL_LOG}' || true)\""
 check "Warm-up confirmed bidirectional echo" "grep -q 'Warm-up reply confirmed' '${SERIAL_LOG}'"
-check "ROS2 host reply publisher is RELIABLE" "grep -q 'reply=RELIABLE' '${HOST_LOG}'"
+check "ROS2 host reply publisher is ${EXPECT_REPLY_RELIABILITY}" "grep -q 'reply=${EXPECT_REPLY_RELIABILITY}' '${HOST_LOG}'"
 check "ROS2 host sent echo replies" "[ '${host_replies}' -gt 0 ] || [ '${rx_count}' -ge '${MIN_RX}' ]"
 check "ESP32 received enough ROS2 replies" "[ '${rx_count}' -ge '${MIN_RX}' ]"
 check "No receive-path packet drops" "grep -q 'Packets Dropped:  0' '${SERIAL_LOG}'"
@@ -186,7 +218,7 @@ check "ESP32 DDS endpoint visible" "grep -q '_CREATED_BY_BARE_DDS_APP_' '${TOPIC
 
 echo
 echo "===== ROS2 Topic Info Evidence (standard CLI) ====="
-check "QoS 1 Reliability: ESP32->ROS2 RELIABLE visible" "topic_section_has '/qos_eval' 'Reliability: RELIABLE'"
+check "QoS 1 Reliability: ESP32->ROS2 ${EXPECT_UPLINK_RELIABILITY} visible" "topic_section_has '/qos_eval' 'Reliability: ${EXPECT_UPLINK_RELIABILITY}'"
 check "QoS 1 Reliability: ROS2->ESP32 ${EXPECT_REPLY_RELIABILITY} visible" "topic_section_has '/qos_eval_reply' 'Reliability: ${EXPECT_REPLY_RELIABILITY}'"
 check "QoS 2 Durability: VOLATILE visible on ESP32 and reply endpoints" "topic_section_has '/qos_eval' 'Durability: VOLATILE' && topic_section_has '/qos_eval_reply' 'Durability: VOLATILE'"
 check "QoS 3 History: ROS2 CLI exposes History field" "topic_section_has '/qos_eval' 'History [(]Depth[)]:' && topic_section_has '/qos_eval_reply' 'History [(]Depth[)]:'"

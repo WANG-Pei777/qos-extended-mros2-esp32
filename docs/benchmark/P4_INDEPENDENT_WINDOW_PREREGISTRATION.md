@@ -86,3 +86,14 @@ P4 can support temporal/network-window reproducibility on the same ESP32,
 mROS2, ROS 2, AP class, and directional impairment design. It cannot establish
 cross-hardware, cross-site, or general DDS reproducibility. Any configuration or
 source difference from Round 4 must be listed beside the comparison.
+
+## Frozen Execution Entry Points
+
+The P4 firmware set is archived at
+`results/experiments/20260714_p4_firmware_set_c9489da`. On or after the earliest
+collection date, open the independent window with
+`scripts/experiment/run_p4_smoke_gates.py`; formal collection is then performed
+by `scripts/experiment/run_p4_formal.py` against the resulting
+`window_manifest.json`. Both executors fail closed on a dirty worktree, stale
+impairment qdisc, firmware or host-binary hash mismatch, WSL-session change, or
+an incomplete six-run smoke gate.

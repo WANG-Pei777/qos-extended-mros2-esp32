@@ -103,6 +103,12 @@ trap cleanup EXIT INT TERM
 echo "Capturing RTPS traffic on ${CAPTURE_INTERFACE}; applying ${LOSS_PERCENT}% ingress random drop from ${BOARD_IP} on ${NETEM_INTERFACE}."
 echo "Scope: board-to-host only. Do not generalize this result to bidirectional loss."
 
+{
+    printf 'phase=baseline timestamp=%s\n' "$(date --iso-8601=seconds)"
+    sudo -n tc qdisc show dev "${NETEM_INTERFACE}"
+    sudo -n tc -s filter show dev "${NETEM_INTERFACE}" ingress
+} > "${TC_STATE_LOG}" 2>&1
+
 tshark -i "${CAPTURE_INTERFACE}" \
     -f "host ${BOARD_IP} and udp portrange 7400-7420" \
     -w "${PCAP_PATH}" > "${CAPTURE_LOG}" 2>&1 &

@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 class EchoNode : public rclcpp::Node
 {
 public:
-  explicit EchoNode(rclcpp::QoS qos_profile)
+  EchoNode(rclcpp::QoS qos_profile, bool use_reliable)
   : Node("echo_cpp_node"), echo_count_(0)
   {
     // Subscriber to /qos_eval
@@ -43,7 +43,8 @@ public:
       reply_qos);
 
     RCLCPP_INFO(this->get_logger(),
-                "Echo node started, listening on /qos_eval, reply=RELIABLE");
+                "Echo reply node started, listening on /qos_eval, reply=%s",
+                use_reliable ? "RELIABLE" : "BEST_EFFORT");
   }
 
 private:
@@ -86,7 +87,7 @@ int main(int argc, char * argv[])
     .history(rclcpp::HistoryPolicy::KeepLast)
     .liveliness(rclcpp::LivelinessPolicy::Automatic);
 
-  auto node = std::make_shared<EchoNode>(qos_profile);
+  auto node = std::make_shared<EchoNode>(qos_profile, use_reliable);
 
   rclcpp::spin(node);
   rclcpp::shutdown();

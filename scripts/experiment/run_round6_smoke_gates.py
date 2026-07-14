@@ -69,7 +69,7 @@ def expected_serial_lines(parameters):
     ]
 
 
-def validate_serial(serial_text, parameters, app_version):
+def validate_serial(serial_text, parameters, app_version, qos=None):
     missing = [
         line
         for line in expected_serial_lines(parameters)
@@ -77,6 +77,14 @@ def validate_serial(serial_text, parameters, app_version):
     ]
     if app_version and f"App version:      {app_version}" not in serial_text:
         missing.append(f"App version:      {app_version}")
+    if qos:
+        reliability = {
+            "reliable": "RELIABLE",
+            "best_effort": "BEST_EFFORT",
+        }[qos]
+        line = f"Reliability: {reliability} uplink, {reliability} reply path"
+        if line not in serial_text:
+            missing.append(line)
     return missing
 
 
@@ -113,8 +121,8 @@ def require_network(board_ip, interface, timeout_seconds=45):
         ["sudo", "-n", "tc", "qdisc", "show", "dev", interface],
         text=True,
     )
-    if "netem" in tc:
-        raise SystemExit(f"netem is active on {interface}")
+    if any(marker in tc for marker in ("netem", " ingress ", " clsact ")):
+        raise SystemExit(f"stale impairment qdisc is active on {interface}")
 
 
 def flash_variant(
@@ -218,6 +226,8 @@ def run_smoke(
     capture_seconds,
     smoke_root,
     harness_commit,
+    host_implementation="python",
+    classification="round6_prefactorial_smoke_gate",
 ):
     variant = variant_manifest["variant"]
     parameters = variant_manifest["parameters"]
@@ -251,6 +261,11 @@ def run_smoke(
     )
     verify_stdout_path = run_dir / "verify_stdout.log"
     environment = os.environ.copy()
+    qos = variant.get("qos", "reliable")
+    reliability = {
+        "reliable": "RELIABLE",
+        "best_effort": "BEST_EFFORT",
+    }[qos]
     environment.update(
         {
             "QOS_VERIFY_SERIAL_LOG": str(run_dir / "serial.log"),
@@ -271,6 +286,9 @@ def run_smoke(
             "QOS_VERIFY_EXPECT_RESOURCE_MAX_BYTES": str(
                 parameters["MROS2_QOS_RESOURCE_MAX_BYTES"]
             ),
+            "QOS_VERIFY_EXPECT_UPLINK_RELIABILITY": reliability,
+            "QOS_VERIFY_EXPECT_REPLY_RELIABILITY": reliability,
+            "QOS_VERIFY_HOST_IMPLEMENTATION": host_implementation,
         }
     )
     command = [
@@ -306,6 +324,7 @@ def run_smoke(
         serial_text,
         parameters,
         variant_manifest.get("app_version"),
+        qos,
     )
     board_udp_packets = (
         count_board_udp_packets(pcap_path, board_ip)
@@ -335,13 +354,14 @@ def run_smoke(
             }
     manifest = {
         "schema_version": 1,
-        "classification": "round6_prefactorial_smoke_gate",
+        "classification": classification,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "result": "PASS" if passed else "FAIL",
         "variant": variant,
         "parameters": parameters,
         "firmware_source_commit": variant_manifest["source_commit"],
         "harness_commit": harness_commit,
+        "host_implementation": host_implementation,
         "firmware_sha256": variant_manifest["artifacts"]["firmware"]["sha256"],
         "run_number": run_number,
         "verification": verification,

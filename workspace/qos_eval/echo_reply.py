@@ -5,6 +5,8 @@ Subscribes to /qos_eval, extracts timestamp, replies to
 /qos_eval_reply with "[ECHO] #N <timestamp_us>" format.
 """
 
+import os
+
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
@@ -23,11 +25,25 @@ class EchoReplyNode(Node):
     def __init__(self):
         super().__init__('echo_reply_node')
 
-        # Subscribe to the ESP32 publisher in the RELIABLE full-QoS validation path.
+        reliability_label = os.environ.get(
+            'QOS_REPLY_RELIABILITY', 'RELIABLE'
+        ).upper()
+        reliability_by_label = {
+            'RELIABLE': ReliabilityPolicy.RELIABLE,
+            'BEST_EFFORT': ReliabilityPolicy.BEST_EFFORT,
+        }
+        try:
+            reliability = reliability_by_label[reliability_label]
+        except KeyError as exc:
+            raise ValueError(
+                'QOS_REPLY_RELIABILITY must be RELIABLE or BEST_EFFORT'
+            ) from exc
+
+        # Use one mode for both directions so endpoint compatibility is explicit.
         sub_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=5,
-            reliability=ReliabilityPolicy.RELIABLE,
+            reliability=reliability,
             durability=DurabilityPolicy.VOLATILE,
         )
         self.sub = self.create_subscription(
@@ -37,7 +53,7 @@ class EchoReplyNode(Node):
         pub_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=5,
-            reliability=ReliabilityPolicy.RELIABLE,
+            reliability=reliability,
             durability=DurabilityPolicy.VOLATILE,
             deadline=Duration(seconds=0, nanoseconds=23_283_064),
             lifespan=Duration(seconds=2),
@@ -46,7 +62,8 @@ class EchoReplyNode(Node):
 
         self.count = 0
         self.get_logger().info(
-            'Echo reply node started, listening on /qos_eval, reply=RELIABLE')
+            'Echo reply node started, listening on /qos_eval, '
+            f'reply={reliability_label}')
 
     def callback(self, msg):
         # Echo back the original message content (ESP32 measures RTT internally)
