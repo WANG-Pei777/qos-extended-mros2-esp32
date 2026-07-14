@@ -1,5 +1,7 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -51,6 +53,26 @@ class AnalyzeP4WireTests(unittest.TestCase):
         summary = MODULE.cell_summary(rows)
         self.assertEqual(len(summary), 2)
         self.assertTrue(all(row["n_runs"] == 1 for row in summary))
+
+    def test_host_ip_is_bound_to_window_evidence(self):
+        window = {
+            "network": {
+                "interface_addresses": [{
+                    "addr_info": [
+                        {"family": "inet6", "scope": "link", "local": "::1"},
+                        {
+                            "family": "inet",
+                            "scope": "global",
+                            "local": "192.0.2.20",
+                        },
+                    ]
+                }]
+            }
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "window.json"
+            path.write_text(json.dumps(window), encoding="utf-8")
+            self.assertEqual(MODULE.host_ip_from_window(path), "192.0.2.20")
 
 
 if __name__ == "__main__":

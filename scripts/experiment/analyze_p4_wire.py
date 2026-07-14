@@ -119,17 +119,38 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
+def host_ip_from_window(path):
+    window = json.loads(Path(path).read_text(encoding="utf-8"))
+    candidates = []
+    for interface in window["network"]["interface_addresses"]:
+        for address in interface.get("addr_info", []):
+            if address.get("family") == "inet" and address.get("scope") == "global":
+                candidates.append(address["local"])
+    if len(candidates) != 1:
+        raise ValueError(
+            f"expected one global IPv4 address in window manifest, got {candidates}"
+        )
+    return candidates[0]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("results_root", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--audit-report", type=Path, required=True)
     parser.add_argument("--board-ip", required=True)
-    parser.add_argument("--host-ip", required=True)
+    parser.add_argument("--host-ip")
+    parser.add_argument("--window-manifest", type=Path)
     args = parser.parse_args()
     audit = json.loads(args.audit_report.read_text(encoding="utf-8"))
     if audit.get("status") != "PASS":
         raise SystemExit("P4 wire analysis requires a PASS formal audit")
+    if bool(args.host_ip) == bool(args.window_manifest):
+        parser.error("provide exactly one of --host-ip or --window-manifest")
+    try:
+        host_ip = args.host_ip or host_ip_from_window(args.window_manifest)
+    except (KeyError, OSError, ValueError) as exc:
+        raise SystemExit(f"cannot resolve P4 host IP: {exc}") from exc
     accepted = [
         row for row in read_csv(args.results_root / "acceptance_ledger.csv")
         if row["accepted"] == "1"
@@ -155,7 +176,7 @@ def main():
             "qos": ledger_row["qos"],
             "target_loss_percent": int(ledger_row["target_loss_percent"]),
         }
-        record.update(summarize_pcap(pcap, args.board_ip, args.host_ip))
+        record.update(summarize_pcap(pcap, args.board_ip, host_ip))
         rows.append(record)
         print(f"[wire] {index}/180 {ledger_row['cell']} run {ledger_row['run_id']}")
     if len(rows) != 180:
@@ -180,7 +201,7 @@ def main():
         "wire_cell_summary_sha256": sha256_file(cell_path),
         "accepted_runs": len(rows),
         "board_ip": args.board_ip,
-        "host_ip": args.host_ip,
+        "host_ip": host_ip,
         "claim_boundary": (
             "Packet-level observations at the capture hook; ingress capture may "
             "precede tc drop and does not independently prove retransmission."
