@@ -24,6 +24,23 @@ export P4_FIRMWARE_SET="$PWD/results/experiments/20260714_p4_firmware_set_c9489d
 export P4_RESULTS="$PWD/results/experiments/$P4_RESULTS_ID"
 ```
 
+The preferred unattended entry point executes every section below in order and
+stops immediately on the first failure:
+
+```bash
+python3 scripts/experiment/run_p4_pipeline.py \
+  --firmware-set "$P4_FIRMWARE_SET" \
+  --results-id "$P4_RESULTS_ID" \
+  --serial-port /dev/ttyUSB0 \
+  --board-ip 10.219.224.107 \
+  --interface eth1 \
+  --new-window-ack \
+  --network-reassociated-ack
+```
+
+The remaining commands document the same pipeline as separately restartable
+stages for audit and recovery.
+
 Open the window and run three exact-binary smoke repetitions per QoS mode:
 
 ```bash
