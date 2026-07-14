@@ -97,3 +97,9 @@ by `scripts/experiment/run_p4_formal.py` against the resulting
 `window_manifest.json`. Both executors fail closed on a dirty worktree, stale
 impairment qdisc, firmware or host-binary hash mismatch, WSL-session change, or
 an incomplete six-run smoke gate.
+
+After all 180 accepted runs are complete, `audit_p4_formal.py` must report
+`PASS` before either analysis entry point runs. `analyze_p4_complete.py`
+implements the frozen six-contrast confirmatory family and publication figure;
+`analyze_p4_wire.py` extracts the prespecified RTPS packet counts as secondary,
+capture-hook evidence with an explicit mechanism-claim boundary.
