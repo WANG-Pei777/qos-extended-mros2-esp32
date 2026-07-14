@@ -199,6 +199,14 @@ def validate_window(
     ).date()
     if local_date < EARLIEST_DATE:
         raise ValueError("P4 window predates the frozen earliest collection date")
+    if datetime.fromisoformat(
+        window["network"]["wsl_kernel_boot_local"]
+    ).date() < EARLIEST_DATE:
+        raise ValueError("P4 WSL session predates the frozen earliest date")
+    if window["network"].get("board_network_reassociation", {}).get(
+        "method"
+    ) != "serial_rts_hardware_reset":
+        raise ValueError("P4 window lacks machine-recorded board reassociation")
     if window["network"]["wsl_boot_id"] != Path(
         "/proc/sys/kernel/random/boot_id"
     ).read_text().strip():

@@ -21,6 +21,11 @@ Before collection:
 If these conditions are not met, the run is a same-window pilot and cannot be
 used as P4 replication evidence.
 
+The smoke executor enforces the first two gates with machine evidence: the
+kernel `btime` must fall on or after the earliest Tokyo date, and the board is
+reset through the serial adapter before post-reset reachability and link-health
+measurements are recorded. A verbal acknowledgement alone is insufficient.
+
 ## Frozen Design
 
 | Factor | Levels |

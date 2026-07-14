@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 from zoneinfo import ZoneInfo
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -39,6 +40,25 @@ def require_collection_window(moment=None):
             "P4 collection is frozen until 2026-07-15 Asia/Tokyo"
         )
     return moment.astimezone(COLLECTION_TIMEZONE)
+
+
+def kernel_boot_time(path=Path("/proc/stat")):
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if line.startswith("btime "):
+            return datetime.fromtimestamp(
+                int(line.split()[1]), tz=timezone.utc
+            ).astimezone(COLLECTION_TIMEZONE)
+    raise ValueError(f"kernel boot time unavailable in {path}")
+
+
+def require_new_wsl_session(boot_time=None):
+    boot_time = boot_time or kernel_boot_time()
+    if boot_time.astimezone(COLLECTION_TIMEZONE).date() < EARLIEST_DATE:
+        raise ValueError(
+            "P4 requires a WSL session started on or after "
+            "2026-07-15 Asia/Tokyo"
+        )
+    return boot_time.astimezone(COLLECTION_TIMEZONE)
 
 
 def load_variants(set_root, master):
@@ -79,7 +99,31 @@ def stale_processes(project_root):
     return sorted(set(found))
 
 
-def write_window_evidence(results_root, board_ip, interface, local_start):
+def reset_board_network(serial_port):
+    import serial
+
+    started = datetime.now(timezone.utc)
+    with serial.Serial(serial_port, 115200, timeout=0.2) as connection:
+        connection.dtr = False
+        connection.rts = True
+        time.sleep(0.15)
+        connection.rts = False
+        time.sleep(0.5)
+    return {
+        "method": "serial_rts_hardware_reset",
+        "serial_port": serial_port,
+        "reset_at_utc": started.isoformat(),
+    }
+
+
+def write_window_evidence(
+    results_root,
+    board_ip,
+    interface,
+    local_start,
+    boot_time,
+    board_reset,
+):
     results_root.mkdir(parents=True, exist_ok=True)
     ping_path = results_root / "window_link_health_ping.log"
     completed = subprocess.run(
@@ -98,7 +142,9 @@ def write_window_evidence(results_root, board_ip, interface, local_start):
         "window_start_utc": local_start.astimezone(timezone.utc).isoformat(),
         "timezone": "Asia/Tokyo",
         "wsl_boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+        "wsl_kernel_boot_local": boot_time.isoformat(),
         "board_ip": board_ip,
+        "board_network_reassociation": board_reset,
         "capture_interface": interface,
         "interface_addresses": ip_json,
         "baseline_qdisc": qdisc,
@@ -131,6 +177,7 @@ def main():
     args = parse_args()
     try:
         local_start = require_collection_window()
+        boot_time = require_new_wsl_session()
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     validate_capture_seconds(args.capture_seconds)
@@ -148,6 +195,11 @@ def main():
     if stale:
         raise SystemExit("stale experiment processes detected:\n" + "\n".join(stale))
     require_network(args.board_ip, args.interface)
+    try:
+        board_reset = reset_board_network(args.serial_port)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"board reset failed: {exc}") from exc
+    require_network(args.board_ip, args.interface, timeout_seconds=90)
     harness_commit = git_output(project_root, "rev-parse", "HEAD")
     master_path = set_root / "manifest.json"
     master = json.loads(master_path.read_text(encoding="utf-8"))
@@ -181,7 +233,12 @@ def main():
             project_root / "tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node"
         ),
         "network": write_window_evidence(
-            results_root, args.board_ip, args.interface, local_start
+            results_root,
+            args.board_ip,
+            args.interface,
+            local_start,
+            boot_time,
+            board_reset,
         ),
         "smoke_requirement": {
             "runs_per_qos": REQUIRED_RUNS_PER_QOS,
