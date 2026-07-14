@@ -23,6 +23,7 @@ class AnalyzeRound6WireTests(unittest.TestCase):
                 "time_s": 1.0,
                 "frame_number": 1,
                 "acknack_count": None,
+                "heartbeat_count": None,
                 "requested_sequences": [],
             },
             {
@@ -34,6 +35,19 @@ class AnalyzeRound6WireTests(unittest.TestCase):
                 "time_s": 2.0,
                 "frame_number": 2,
                 "acknack_count": None,
+                "heartbeat_count": 1,
+                "requested_sequences": [],
+            },
+            {
+                "run_id": 1,
+                "flow": "board_to_host_app",
+                "event_type": "heartbeat",
+                "sequence": 1,
+                "last_sequence": 7,
+                "time_s": 2.0001,
+                "frame_number": 4,
+                "acknack_count": None,
+                "heartbeat_count": 1,
                 "requested_sequences": [],
             },
             {
@@ -44,6 +58,7 @@ class AnalyzeRound6WireTests(unittest.TestCase):
                 "time_s": 2.1,
                 "frame_number": 3,
                 "acknack_count": 1,
+                "heartbeat_count": None,
                 "requested_sequences": [7],
             },
         ]
@@ -53,6 +68,8 @@ class AnalyzeRound6WireTests(unittest.TestCase):
             metrics["wire_unresolved_unique_sequences_uncensored"], 0
         )
         self.assertEqual(metrics["wire_right_censored_request_observations"], 1)
+        self.assertEqual(metrics["wire_heartbeat_observations"], 1)
+        self.assertEqual(metrics["wire_heartbeat_raw_observations"], 2)
 
 
 if __name__ == "__main__":

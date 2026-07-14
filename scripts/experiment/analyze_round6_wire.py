@@ -49,9 +49,33 @@ def derive_wire_metrics(events, run_id):
     flow = "board_to_host_app"
     summary = rtps.summarize_flow(events, run_id, flow)
     links = rtps.reconstruct_nack_links(events, run_id, flow)
-    heartbeats = sorted(
-        event["time_s"]
-        for event in events
+    heartbeat_events = sorted(
+        (
+            event for event in events
+            if event.get("run_id") == run_id
+            and event["flow"] == flow
+            and event["event_type"] == "heartbeat"
+        ),
+        key=lambda event: event["time_s"],
+    )
+    unique_heartbeats = []
+    seen_heartbeats = set()
+    for event in heartbeat_events:
+        count = event.get("heartbeat_count")
+        key = (
+            event.get("source_guid", ""),
+            count if count is not None else event["frame_number"],
+        )
+        if key not in seen_heartbeats:
+            seen_heartbeats.add(key)
+            unique_heartbeats.append(event)
+    heartbeats = [event["time_s"] for event in unique_heartbeats]
+    heartbeat_intervals = [
+        1000.0 * (right - left)
+        for left, right in zip(heartbeats, heartbeats[1:])
+    ]
+    raw_heartbeat_observations = sum(
+        1 for event in events
         if event.get("run_id") == run_id
         and event["flow"] == flow
         and event["event_type"] == "heartbeat"
@@ -98,10 +122,11 @@ def derive_wire_metrics(events, run_id):
         "wire_data_observations": summary["data_observations"],
         "wire_data_duplicate_observations": summary["data_duplicate_observations"],
         "wire_data_repeated_sequences": summary["data_repeated_sequences"],
-        "wire_heartbeat_observations": summary["heartbeat_observations"],
-        "wire_heartbeat_interval_median_ms": summary[
-            "heartbeat_interval_median_ms"
-        ],
+        "wire_heartbeat_observations": len(unique_heartbeats),
+        "wire_heartbeat_raw_observations": raw_heartbeat_observations,
+        "wire_heartbeat_interval_median_ms": median_or_blank(
+            heartbeat_intervals
+        ),
         "wire_link_observations": len(links),
         "wire_final_heartbeat_time_s": (
             final_heartbeat_time if final_heartbeat_time is not None else ""
