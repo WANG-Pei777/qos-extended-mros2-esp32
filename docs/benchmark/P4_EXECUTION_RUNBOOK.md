@@ -95,6 +95,7 @@ After audit and both analyses complete, seal the immutable release tree:
 
 ```bash
 python3 scripts/experiment/seal_result_tree.py "$P4_RESULTS"
+python3 scripts/experiment/verify_result_tree_seal.py "$P4_RESULTS"
 ```
 
 Record the result-tree digest, file-manifest digest, acceptance-ledger digest,
