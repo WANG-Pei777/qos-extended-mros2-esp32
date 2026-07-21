@@ -2,6 +2,16 @@
 
 This directory contains reproducibility notes, hardware validation procedures, and QoS evidence documents.
 
+## Start Here
+
+```text
+docs/REPOSITORY_SCOPE.md              Public/private file boundary
+docs/validation/QUICK_START.md        Shortest hardware validation path
+docs/benchmark/README_EXPERIMENTS.md  Experiment entry point
+docs/qos/QOS_IMPLEMENTATION_STATUS.md Implementation status
+docs/qos/QOS_EVIDENCE_MATRIX.md       Evidence matrix and limitations
+```
+
 ## Hardware Validation
 
 ```text
@@ -15,6 +25,16 @@ docs/validation/RUNBOOK.md          Windows + WSL2 hardware setup and validation
 ```text
 docs/qos/QOS_IMPLEMENTATION_STATUS.md  Current QoS implementation status and product-grade gaps
 docs/qos/QOS_EVIDENCE_MATRIX.md        Evidence matrix for the validated QoS categories
+```
+
+## Experiment and Baseline Material
+
+```text
+docs/benchmark/                   Frozen protocols, collection, audit, and analysis
+scripts/experiment/               Executable experiment tooling
+upstream_bench/                   Upstream mros2-esp32 baseline instructions
+microros_bench/                   micro-ROS matched-workload baseline instructions
+docs/figures/                     Reproducible figures from local evidence
 ```
 
 ## Scope

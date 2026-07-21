@@ -75,7 +75,7 @@ echo "[sweep] Creating backup of config.h..."
 # Source ESP-IDF environment
 echo "[sweep] Setting up ESP-IDF environment..."
 set +u
-source /home/wsde-47/esp/esp-idf/export.sh
+source "${IDF_PATH:?Set IDF_PATH}/export.sh"
 set -u
 
 # Track start time

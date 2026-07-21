@@ -122,7 +122,7 @@
 # 点击 "Start capturing"
 
 # 终端 2：运行测试
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 ./scripts/validation/qos_verify.sh /dev/ttyUSB0
 
@@ -137,7 +137,7 @@ source /opt/ros/humble/setup.bash
 # 终端 1：Wireshark（同上，重新开始抓包）
 
 # 终端 2：运行 upstream 测试
-cd /home/wsde-47/mros2_upstream_bench
+cd ~/mROS2-QoS/upstream_bench
 source /opt/ros/humble/setup.bash
 python3 test_upstream_rtt.py
 
@@ -154,7 +154,7 @@ micro_ros_agent udp4 --port 7408
 # 终端 2：Wireshark（重新开始抓包）
 
 # 终端 3：运行 micro-ROS 测试
-cd /home/wsde-47/microros_bench
+cd ~/mROS2-QoS/microros_bench
 python3 test_microros_rtt.py
 
 # 停止 Wireshark
@@ -306,7 +306,7 @@ python3 test_microros_rtt.py
 
 4. **导出延迟数据**：
    ```
-   → 只看一个方向的包：ip.src == 10.54.75.107
+   → 只看一个方向的包：ip.src == 192.0.2.1
    → File → Export Packet Dissections → As CSV
    → 保存为：rtt_deltas_mros2qos.csv
    → 在 Excel/Python 中画直方图
@@ -335,7 +335,7 @@ python3 test_microros_rtt.py
    # 终端 1：启动 Wireshark 抓包
    
    # 终端 2：先启动发布者
-   cd /home/wsde-47/mROS2-QoS
+   cd ~/mROS2-QoS
    source /opt/ros/humble/setup.bash
    # 烧录并启动 ESP32（发布 5 条消息后等待）
    
@@ -383,7 +383,7 @@ python3 test_microros_rtt.py
    ```
    显示过滤器：udp
    → 在包列表中找到三个 IP：
-     - ESP32 IP (例如 10.54.75.107)
+     - ESP32 IP (例如 192.0.2.1)
      - Agent IP (WSL IP)
      - ROS2 Host IP (可能与 Agent 相同)
    ```
@@ -421,7 +421,7 @@ python3 test_microros_rtt.py
 
 1. **修改配置**：
    ```bash
-   cd /home/wsde-47/mROS2-QoS
+   cd ~/mROS2-QoS
    # 找到 config.h 并修改
    vim mros2/embeddedRTPS/include/rtps/config.h
    

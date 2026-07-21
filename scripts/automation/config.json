@@ -1,12 +1,12 @@
 {
-  "project_root": "/home/wsde-47/mROS2-QoS",
+  "project_root": ".",
   "config_file": "platform/rtps/config.h",
   "serial_port": "/dev/ttyUSB0",
   "results_dir": "results/param_sweep",
   "pcap_dir": "results/param_sweep/pcaps",
 
   "build_commands": [
-    "source /home/wsde-47/esp/esp-idf/export.sh",
+    "source ${IDF_PATH:?Set_IDF_PATH}/export.sh",
     "idf.py build"
   ],
   "flash_command": "idf.py -p {port} flash",

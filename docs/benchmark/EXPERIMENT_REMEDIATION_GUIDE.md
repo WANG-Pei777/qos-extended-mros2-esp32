@@ -85,7 +85,7 @@
 ### ① 立即提交(10 分钟,保护资产)
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 git add scripts/experiment/ tools/ docs/benchmark/MASTER_EXPERIMENT_PLAN.md \
         docs/benchmark/EXPERIMENT_REMEDIATION_GUIDE.md
 git commit -m "Add experiment harness with audit fixes (exact-match pkill, per-condition validate)"

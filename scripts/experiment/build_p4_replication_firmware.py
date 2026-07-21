@@ -32,6 +32,7 @@ HISTORY_CAPACITY = 10
 HEARTBEAT_MS = 4000
 RESOURCE_MAX_SAMPLES = 30
 RESOURCE_MAX_BYTES = 65536
+WIFI_INITIAL_CONNECT_TIMEOUT_MS = 180000
 SEED = 20260715
 BLOCKS = 10
 RUNS_PER_VISIT = 3
@@ -94,6 +95,8 @@ def build_command(build_dir):
         f"MROS2_QOS_RESOURCE_MAX_SAMPLES={RESOURCE_MAX_SAMPLES}",
         "-D",
         f"MROS2_QOS_RESOURCE_MAX_BYTES={RESOURCE_MAX_BYTES}",
+        "-D",
+        f"MROS2_WIFI_INITIAL_CONNECT_TIMEOUT_MS={WIFI_INITIAL_CONNECT_TIMEOUT_MS}",
         "build",
     ]
 
@@ -105,6 +108,10 @@ def verify_compile_evidence(build_dir, qos):
     main_command = next(
         entry["command"] for entry in entries
         if entry["file"].endswith("/main/app.cpp")
+    )
+    wifi_command = next(
+        entry["command"] for entry in entries
+        if entry["file"].endswith("/platform/wifi/wifi.c")
     )
     expected = [
         f"-DMROS2_QOS_HISTORY_DEPTH={DEPTH}",
@@ -121,7 +128,15 @@ def verify_compile_evidence(build_dir, qos):
         missing.append(f"unexpected {best_effort_flag}")
     if missing:
         raise ValueError(f"{qos} compile evidence mismatch: {missing}")
-    return expected + ([best_effort_flag] if qos == "best_effort" else [])
+    wifi_flag = (
+        "-DMROS2_WIFI_INITIAL_CONNECT_TIMEOUT_MS="
+        f"{WIFI_INITIAL_CONNECT_TIMEOUT_MS}"
+    )
+    if wifi_flag not in wifi_command:
+        raise ValueError(f"{qos} Wi-Fi compile evidence mismatch: {wifi_flag}")
+    return expected + [wifi_flag] + (
+        [best_effort_flag] if qos == "best_effort" else []
+    )
 
 
 def expected_cache():
@@ -131,6 +146,9 @@ def expected_cache():
         "MROS2_RTPS_HEARTBEAT_PERIOD_MS": str(HEARTBEAT_MS),
         "MROS2_QOS_RESOURCE_MAX_SAMPLES": str(RESOURCE_MAX_SAMPLES),
         "MROS2_QOS_RESOURCE_MAX_BYTES": str(RESOURCE_MAX_BYTES),
+        "MROS2_WIFI_INITIAL_CONNECT_TIMEOUT_MS": str(
+            WIFI_INITIAL_CONNECT_TIMEOUT_MS
+        ),
     }
 
 
@@ -193,6 +211,9 @@ def build_variant(workspace, build_root, output_dir, qos, source_commit, epoch):
             "MROS2_RTPS_HEARTBEAT_PERIOD_MS": HEARTBEAT_MS,
             "MROS2_QOS_RESOURCE_MAX_SAMPLES": RESOURCE_MAX_SAMPLES,
             "MROS2_QOS_RESOURCE_MAX_BYTES": RESOURCE_MAX_BYTES,
+            "MROS2_WIFI_INITIAL_CONNECT_TIMEOUT_MS": (
+                WIFI_INITIAL_CONNECT_TIMEOUT_MS
+            ),
         },
         "cmake_cache": observed,
         "compile_definitions": definitions,

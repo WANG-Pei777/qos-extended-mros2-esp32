@@ -79,7 +79,7 @@ The maximum combination passed the 22-assertion hardware smoke with a `40/40` hi
 
 The formal firmware set is archived under `results/experiments/20260713_round6_firmware_set_5dabf7e`. It contains 12 unique firmware SHA-256 values from source commit `5dabf7e`, 96 hashed build artifacts, and a 120-visit schedule. An independent rebuild of `d05_h0250` reproduced the firmware, bootloader, and partition-table SHA values exactly.
 
-All 12 cells then passed three hardware/capture smoke runs each: 36 accepted runs, 22/22 assertions per run, and nonempty board-to-host UDP evidence in every PCAP. The audit revalidated 216 run files. A stricter pre-data re-audit using `udp && ip.src == 10.219.224.107` found board-originated traffic in 36/36 accepted PCAPs (minimum 390, maximum 2,917 packets). One preliminary 30-second capture was retained in the rejection ledger because its harness window ended before the final behavior summary; it is excluded from the 36 accepted smoke runs. Smoke evidence is gate-only and must not enter the formal factorial analysis.
+All 12 cells then passed three hardware/capture smoke runs each: 36 accepted runs, 22/22 assertions per run, and nonempty board-to-host UDP evidence in every PCAP. The audit revalidated 216 run files. A stricter pre-data re-audit using `udp && ip.src == 192.0.2.1` found board-originated traffic in 36/36 accepted PCAPs (minimum 390, maximum 2,917 packets). One preliminary 30-second capture was retained in the rejection ledger because its harness window ended before the final behavior summary; it is excluded from the 36 accepted smoke runs. Smoke evidence is gate-only and must not enter the formal factorial analysis.
 
 ## Randomization And Independence
 

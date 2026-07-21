@@ -31,7 +31,7 @@ counts, and transport-layer evidence.
 
 ### C1. 效力探针 @15%(通行证,~20 分钟)
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 HOST_MODE=lossy:0.15 bash scripts/experiment/run_matrix.sh mros2qos efficacy_probe_15_v2 5
 ```
 验收:5/5 匹配;RX ≤ TX 且 ≈ TX×0.85±10%(RX>TX 即主机堆积,立即停);

@@ -28,7 +28,7 @@ echo "parameter,value,free_heap_bytes,status,notes" > "${RESULTS_CSV}"
 
 # Source ESP-IDF
 set +u
-source /home/wsde-47/esp/esp-idf/export.sh > /dev/null 2>&1
+source "${IDF_PATH:?Set IDF_PATH}/export.sh" > /dev/null 2>&1
 set -u
 
 test_config() {

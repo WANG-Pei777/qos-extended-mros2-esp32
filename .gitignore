@@ -51,10 +51,37 @@ docs/**/*.pdf
 # ...but camera-ready figure PDFs are deliverables (source pcaps are local-only)
 !docs/figures/*.pdf
 *.pptx
+*.ppt
+*.pptm
+*.inspect.ndjson
+*.opju
+*.xlsx
+*.zip
+*.tar
+*.tgz
+*.pcap
+*.pcapng
+
+# Local experiment workspaces and generated release bundles
+/mROS2-QoS-p4-run/
+/outputs/
+/PROJECT_MEMORY.md
+/upstream_bench/mros2-esp32/
+/microros_bench/agent_toolchain/
+/microros_bench/micro_ros_espidf_component/
+/microros_bench/telemetry_compare/build*/
+/microros_bench/telemetry_compare/sdkconfig
+/microros_bench/telemetry_compare/dependencies.lock
+/microros_bench/telemetry_compare/sdkconfig.defaults.local
+
+# Local presentation directories
+/archive/presentation/
+/docs/presentation/
 
 # OS specific
 .DS_Store
 Thumbs.db
+*:Zone.Identifier
 
 # Temporary files
 *.tmp

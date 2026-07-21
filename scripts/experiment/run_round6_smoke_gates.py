@@ -54,7 +54,7 @@ def parse_verification(stdout):
 
 
 def expected_serial_lines(parameters):
-    return [
+    lines = [
         f"History    : KEEP_LAST({parameters['MROS2_QOS_HISTORY_DEPTH']})",
         (
             "Resources  : "
@@ -67,6 +67,10 @@ def expected_serial_lines(parameters):
             f"heartbeat={parameters['MROS2_RTPS_HEARTBEAT_PERIOD_MS']}ms"
         ),
     ]
+    wifi_timeout = parameters.get("MROS2_WIFI_INITIAL_CONNECT_TIMEOUT_MS")
+    if wifi_timeout is not None:
+        lines.append(f"initial connect timeout: {wifi_timeout} ms")
+    return lines
 
 
 def validate_serial(serial_text, parameters, app_version, qos=None):
@@ -389,7 +393,7 @@ def parse_args():
     parser.add_argument("--project-root", type=Path, default=project_root)
     parser.add_argument("--firmware-set", type=Path, required=True)
     parser.add_argument("--serial-port", default="/dev/ttyUSB0")
-    parser.add_argument("--board-ip", default="10.219.224.107")
+    parser.add_argument("--board-ip", default="192.0.2.1")
     parser.add_argument("--interface", default="eth1")
     parser.add_argument("--capture-seconds", type=int, default=60)
     parser.add_argument("--runs-per-cell", type=int, default=3)

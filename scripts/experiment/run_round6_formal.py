@@ -160,7 +160,7 @@ def parse_args():
     parser.add_argument("--firmware-set", type=Path, required=True)
     parser.add_argument("--results-id", required=True)
     parser.add_argument("--serial-port", default="/dev/ttyUSB0")
-    parser.add_argument("--board-ip", default="10.219.224.107")
+    parser.add_argument("--board-ip", default="192.0.2.1")
     parser.add_argument("--interface", default="eth1")
     parser.add_argument("--flash-baud", type=int, default=460800)
     parser.add_argument("--max-visits", type=int)

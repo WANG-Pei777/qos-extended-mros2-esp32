@@ -8,7 +8,32 @@
 
 ## 🎯 核心文档
 
-### 1. **EXPERIMENT_DESIGN.md** - 实验总体设计
+### 1. **WORKLOAD_PROTOCOL_READINESS_AUDIT_20260720.md** - 新工作负载门禁
+- **内容**：大 payload、发布频率、DATA_FRAG、Agent、PCAP 和静态资源的工程审计
+- **结论边界**：仅用于预注册前 readiness；N=1 smoke 不进入正式比较
+- **硬门禁**：3270-run 能耗矩阵仍等待外接校准功耗仪与 GPIO 对齐
+
+### 2. **IMPAIRMENT_EFFICACY_READINESS_AUDIT_20260720.md** - 网络注入效力审计
+- **内容**：loss、burst、delay、jitter、reordering 的命令、PCAP、板端观测与清理闭环
+- **结论边界**：host-to-board egress profile 可进入预注册审查；N=1 不作性能结论
+- **剩余门禁**：外接功耗仪、正式存储空间和随机化冻结
+
+### 3. **RESOURCE_WORKLOAD_IMPAIRMENT_PROTOCOL_DRAFT.md** - 扩展正式协议
+- **内容**：CPU、heap、stack、能耗、payload/rate、impairment 与三系统矩阵
+- **状态**：DRAFT；不授权正式采集
+- **适用于**：功耗硬件到位后的预注册修订与协议冻结
+
+### 4. **THREE_SYSTEM_FORMAL_RESULTS.md** - 三系统正式结果
+- **内容**：300-run 预注册正式对比的审计、统计、PCAP/资源表、Origin 图和封存哈希
+- **结论边界**：RTT 对比经 Holm 校正后均不显著；micro-ROS 在持续运行 Agent 条件下冷启动更快
+- **适用于**：论文主文、补充材料、答辩和复现审查
+
+### 5. **P4_FORMAL_RESULTS.md** - P4 独立时间窗复现
+- **内容**：180-run RELIABLE/BEST_EFFORT 丢包复现的审计、统计、PCAP 与封存哈希
+- **结论边界**：5% 和 nominal 15% 下 RELIABLE RTT p95 显著更高，15% 下无交付优势
+- **适用于**：论文复现性主张和补充材料
+
+### 6. **EXPERIMENT_DESIGN.md** - 实验总体设计
 - **内容**：完整的实验方案设计
 - **包括**：
   - 三系统对比矩阵（micro-ROS / upstream / mROS2-QoS）
@@ -18,7 +43,7 @@
   - 论文写作指导
 - **适用于**：理解实验设计思路，和导师讨论方案
 
-### 2. **PARAMETER_TUNING_EXPERIMENTS.md** - 参数调节详细说明
+### 7. **PARAMETER_TUNING_EXPERIMENTS.md** - 参数调节详细说明
 - **内容**：10 个 RTPS 参数的深入分析
 - **包括**：
   - 每个参数的作用机制
@@ -27,7 +52,7 @@
   - 4 个场景化配置（低延迟/高可靠/低功耗/大规模）
 - **适用于**：理解参数含义，准备和老师讨论"为什么这样调"
 
-### 3. **EXPERIMENTAL_PROCEDURE.md** - 完整操作手册（⭐ 最重要）
+### 8. **EXPERIMENTAL_PROCEDURE.md** - 完整操作手册（⭐ 最重要）
 - **内容**：1300 行详细的分步操作指南
 - **包括**：
   - ✅ 每一步你需要执行的命令
@@ -82,12 +107,15 @@
 
 ### **1. 项目价值**
 ```
-"我在导师的 mros2-esp32 基础上添加了 QoS 支持，实现了：
-- 性能更优：比 upstream 快 4%（20.7 vs 21.6 ms）
-- 比官方 micro-ROS 快 25%（20.7 vs 27.5 ms）
-- 功能完整：7 种 QoS 策略，无需 Agent
-- 成本可控：仅增加 5.6% flash"
+"300 次预注册正式对比表明：
+- 三系统在清洁网络下均完成 100% 消息交付
+- RTT p95 的三组差异经 Holm 校正后均不显著
+- micro-ROS 在持续运行 Agent 条件下比两套 direct RTPS 更快就绪
+- mROS2-QoS 的核心贡献应由 QoS 功能和受控丢包机制实验支撑，
+  不使用早期 N=1 数据宣称普遍 RTT 优势"
 ```
+
+早期 `20.7/21.6/27.5 ms` 数字仅是 pilot，不得作为正式论文结论。
 
 ### **2. 参数调节理解**
 ```
@@ -162,7 +190,7 @@ results/experiments_2026/
 
 2. **准备环境**（10 分钟）
    ```bash
-   cd /home/wsde-47/mROS2-QoS
+   cd ~/mROS2-QoS
    mkdir -p results/experiments_2026/{raw_data,figures,analysis}
    ls /dev/ttyUSB*  # 检查 ESP32 连接
    ```
@@ -250,7 +278,7 @@ results/experiments_2026/
 **现在准备好了吗？**
 
 ```bash
-cd /home/wsde-47/mROS2-QoS/docs/benchmark
+cd ~/mROS2-QoS/docs/benchmark
 cat EXPERIMENTAL_PROCEDURE.md  # 打开操作手册
 ```
 

@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow-navy" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#17324d"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#008a87"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c95617"/>
+    </marker>
+    <style>
+      .title { font: 700 31px Arial, Helvetica, sans-serif; fill: #17324d; }
+      .section { font: 700 23px Arial, Helvetica, sans-serif; fill: #17324d; letter-spacing: 0; }
+      .layer { font: 700 18px Arial, Helvetica, sans-serif; fill: #17324d; }
+      .body { font: 400 17px Arial, Helvetica, sans-serif; fill: #17324d; }
+      .small { font: 400 14px Arial, Helvetica, sans-serif; fill: #406074; }
+      .micro { font: 700 13px Arial, Helvetica, sans-serif; fill: #17324d; }
+      .measure { font: 700 15px Arial, Helvetica, sans-serif; fill: #17324d; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#ffffff"/>
+
+  <text x="80" y="70" class="title">mROS-esp QoS extension architecture and measurement hooks</text>
+  <line x1="80" y1="92" x2="1520" y2="92" stroke="#17324d" stroke-width="2"/>
+
+  <!-- Host ROS 2 stack -->
+  <rect x="80" y="140" width="440" height="510" fill="#eef6fb" stroke="#17324d" stroke-width="2"/>
+  <rect x="80" y="140" width="440" height="58" fill="#c6e1f0" stroke="#17324d" stroke-width="2"/>
+  <text x="300" y="177" class="section" text-anchor="middle">Host PC: ROS 2</text>
+
+  <rect x="108" y="225" width="384" height="72" fill="#ffffff" stroke="#6f95aa" stroke-width="1.5"/>
+  <text x="130" y="254" class="layer">Application</text>
+  <text x="270" y="254" class="body">ROS 2 user node / echo application</text>
+  <text x="270" y="279" class="small">application TX/RX timestamps</text>
+
+  <rect x="108" y="314" width="384" height="72" fill="#ffffff" stroke="#6f95aa" stroke-width="1.5"/>
+  <text x="130" y="343" class="layer">Client API</text>
+  <text x="270" y="343" class="body">rclcpp + RMW</text>
+  <text x="270" y="368" class="small">QoS contract at the ROS 2 side</text>
+
+  <rect x="108" y="403" width="384" height="72" fill="#ffffff" stroke="#6f95aa" stroke-width="1.5"/>
+  <text x="130" y="432" class="layer">Middleware</text>
+  <text x="270" y="432" class="body">DDS / RTPS</text>
+  <text x="270" y="457" class="small">DATA, HEARTBEAT, ACKNACK</text>
+
+  <rect x="108" y="492" width="384" height="126" fill="#fff7ed" stroke="#c95617" stroke-width="2.5"/>
+  <text x="130" y="521" class="layer" fill="#8c3612">Measurement hook A</text>
+  <text x="130" y="550" class="body">Host-side PCAP capture</text>
+  <text x="130" y="575" class="small">RTPS frame types, bytes, ACKNACK load, and repair matching</text>
+  <text x="130" y="601" class="small">Protocol evidence; application RTT is logged separately.</text>
+
+  <!-- Agent -->
+  <rect x="605" y="270" width="235" height="198" fill="#f7f9fb" stroke="#17324d" stroke-width="2"/>
+  <rect x="605" y="270" width="235" height="52" fill="#d9e9f3" stroke="#17324d" stroke-width="2"/>
+  <text x="722" y="303" class="section" text-anchor="middle">micro-ROS Agent</text>
+  <text x="722" y="356" class="layer" text-anchor="middle">Bridge / transport endpoint</text>
+  <text x="722" y="388" class="body" text-anchor="middle">ROS 2 host communication</text>
+  <text x="722" y="416" class="body" text-anchor="middle">USB / UART session</text>
+  <text x="722" y="444" class="small" text-anchor="middle">RTPS control and data path</text>
+
+  <!-- ESP32 stack -->
+  <rect x="925" y="140" width="595" height="510" fill="#eff8f2" stroke="#17324d" stroke-width="2"/>
+  <rect x="925" y="140" width="595" height="58" fill="#cce9d7" stroke="#17324d" stroke-width="2"/>
+  <text x="1222" y="177" class="section" text-anchor="middle">ESP32-S3: mROS-esp</text>
+
+  <rect x="953" y="225" width="539" height="66" fill="#ffffff" stroke="#6f9b83" stroke-width="1.5"/>
+  <text x="976" y="252" class="layer">Application</text>
+  <text x="1155" y="252" class="body">publisher / echo workload</text>
+  <text x="1155" y="276" class="small">delivery and end-to-end RTT logging</text>
+
+  <rect x="953" y="308" width="539" height="76" fill="#fff7ed" stroke="#c95617" stroke-width="3"/>
+  <text x="976" y="338" class="layer" fill="#8c3612">This work</text>
+  <text x="1155" y="338" class="body">mROS-esp QoS API and policy state</text>
+  <text x="1155" y="363" class="small">policy creation, compatibility, and runtime enforcement</text>
+
+  <rect x="953" y="401" width="539" height="106" fill="#ffffff" stroke="#6f9b83" stroke-width="1.5"/>
+  <text x="976" y="431" class="layer">Client / protocol</text>
+  <text x="1155" y="431" class="body">mROS2 client + embeddedRTPS</text>
+  <text x="1155" y="456" class="small">history state, reliability control traffic, serialization</text>
+  <text x="1155" y="481" class="small">resource-limited buffers on the embedded endpoint</text>
+
+  <rect x="953" y="524" width="539" height="94" fill="#ffffff" stroke="#6f9b83" stroke-width="1.5"/>
+  <text x="976" y="553" class="layer">Transport</text>
+  <text x="1155" y="553" class="body">USB / UART link to the Agent</text>
+  <text x="1155" y="579" class="small">controlled loss injection during formal experiments</text>
+
+  <!-- QoS policy matrix -->
+  <rect x="925" y="680" width="595" height="150" fill="#ffffff" stroke="#17324d" stroke-width="2"/>
+  <text x="953" y="713" class="layer">QoS extensions implemented in mROS-esp</text>
+  <g fill="#eff8f2" stroke="#008a87" stroke-width="1.5">
+    <rect x="953" y="733" width="126" height="32"/>
+    <rect x="1089" y="733" width="126" height="32"/>
+    <rect x="1225" y="733" width="126" height="32"/>
+    <rect x="1361" y="733" width="126" height="32"/>
+    <rect x="953" y="777" width="126" height="32"/>
+    <rect x="1089" y="777" width="126" height="32"/>
+    <rect x="1225" y="777" width="262" height="32"/>
+  </g>
+  <text x="1016" y="755" class="micro" text-anchor="middle">Reliability</text>
+  <text x="1152" y="755" class="micro" text-anchor="middle">Durability</text>
+  <text x="1288" y="755" class="micro" text-anchor="middle">History</text>
+  <text x="1424" y="755" class="micro" text-anchor="middle">Deadline</text>
+  <text x="1016" y="799" class="micro" text-anchor="middle">Lifespan</text>
+  <text x="1152" y="799" class="micro" text-anchor="middle">Liveliness</text>
+  <text x="1356" y="799" class="micro" text-anchor="middle">Resource limits</text>
+
+  <!-- Communication arrows -->
+  <path d="M520 355 H605" fill="none" stroke="#17324d" stroke-width="4" marker-end="url(#arrow-navy)"/>
+  <path d="M840 355 H925" fill="none" stroke="#17324d" stroke-width="4" marker-end="url(#arrow-navy)"/>
+  <path d="M925 405 H840" fill="none" stroke="#008a87" stroke-width="3" marker-end="url(#arrow-teal)"/>
+  <path d="M605 405 H520" fill="none" stroke="#008a87" stroke-width="3" marker-end="url(#arrow-teal)"/>
+  <text x="561" y="338" class="small" text-anchor="middle">ROS 2 / DDS</text>
+  <text x="882" y="338" class="small" text-anchor="middle">USB / UART</text>
+  <text x="722" y="520" class="measure" text-anchor="middle">DATA + HEARTBEAT</text>
+  <text x="722" y="545" class="small" text-anchor="middle">ACKNACK feedback and retransmission control</text>
+
+  <!-- Measurement strip -->
+  <rect x="80" y="710" width="760" height="120" fill="#f7f9fb" stroke="#17324d" stroke-width="2"/>
+  <text x="108" y="744" class="layer">Formal experiment observables</text>
+  <circle cx="125" cy="780" r="16" fill="#c95617"/>
+  <text x="125" y="786" class="micro" fill="#ffffff" text-anchor="middle">A</text>
+  <text x="153" y="786" class="small">RTPS mix and wire cost</text>
+  <circle cx="370" cy="780" r="16" fill="#008a87"/>
+  <text x="370" y="786" class="micro" fill="#ffffff" text-anchor="middle">B</text>
+  <text x="398" y="786" class="small">Delivery and RTT</text>
+  <circle cx="590" cy="780" r="16" fill="#17324d"/>
+  <text x="590" y="786" class="micro" fill="#ffffff" text-anchor="middle">C</text>
+  <text x="618" y="786" class="small">Loss direction and QoS</text>
+</svg>

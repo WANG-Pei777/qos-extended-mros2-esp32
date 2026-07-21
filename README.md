@@ -1,12 +1,18 @@
 # mROS2-ESP32 QoS Hardware Validation
 
-This project provides a real-hardware validation workflow for QoS extensions in mROS2-ESP32:
+This repository contains the mROS2-ESP32 QoS implementation, ESP32-S3 firmware,
+controlled network experiments, and reproducible analysis tooling:
 
 ```text
 WSL2 ROS2 Humble <-> ESP32-S3 mROS2
 ```
 
-USB serial is used only for flashing and observing logs. The actual ROS2/mROS2 communication runs over WiFi using DDS/RTPS.
+USB serial is used only for flashing and observing logs. The actual ROS2/mROS2
+communication runs over WiFi using DDS/RTPS.
+
+The public repository is intentionally source-first. Local captures, build
+trees, generated bundles, credentials, and presentation files are excluded.
+See [the repository scope](docs/REPOSITORY_SCOPE.md) for the boundary.
 
 ## Validation Entry Point
 
@@ -101,7 +107,7 @@ ESP32 -> ROS2: /qos_eval, RELIABLE
 ROS2 -> ESP32: /qos_eval_reply, RELIABLE
 ```
 
-The seven QoS-related categories presented are:
+The seven QoS-related categories implemented or evaluated by the workflow are:
 
 ```text
 Reliability
@@ -113,11 +119,15 @@ Liveliness
 Resource Limits
 ```
 
-Important boundary:
+Important boundaries:
 
 ```text
-This is a QoS extension prototype and real-hardware validation workflow, not a complete product-grade DDS QoS implementation.
-The strict full-RELIABLE path has passed the current real-hardware preflight and 3-run reset stress test.
+This is a QoS extension prototype and real-hardware validation workflow, not a
+complete product-grade DDS QoS implementation. The strict full-RELIABLE path
+has passed the current real-hardware preflight and reset-stress checks.
+
+Energy measurement is deferred. No energy result or per-message energy claim is
+made until an external calibrated monitor and GPIO time alignment are available.
 ```
 
 ## Current Project Layout
@@ -125,9 +135,15 @@ The strict full-RELIABLE path has passed the current real-hardware preflight and
 ```text
 mros2/                    Core mROS2 and embeddedRTPS source
 platform/                 ESP32 WiFi and RTPS platform configuration
-workspace/qos_eval/ Real-hardware QoS validation firmware
+workspace/qos_eval/       Real-hardware QoS validation firmware
+components/               Reusable telemetry and benchmark components
+microros_bench/           micro-ROS matched-workload baseline source
+upstream_bench/           upstream baseline runner and configuration notes
 scripts/validation/       Flashing, preflight, and WSL firewall helpers
+scripts/experiment/       Formal collection, audit, and analysis tools
 scripts/test/             Static QoS validation checks
 docs/validation/          Hardware validation instructions
-docs/qos/                 Objective QoS status and evidence matrix
+docs/qos/                 QoS implementation status and evidence matrix
+docs/benchmark/           Frozen protocols and experiment runbooks
+docs/figures/             Reproducible figure sources and previews
 ```

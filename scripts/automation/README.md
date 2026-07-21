@@ -26,7 +26,7 @@ scripts/automation/
 
 **心跳周期扫频**（~3 小时）：
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 ./scripts/automation/param_sweep.sh heartbeat_period /dev/ttyUSB0 30
 ```
 
@@ -189,7 +189,7 @@ sudo usermod -aG dialout $USER
 
 ### ESP-IDF 环境未加载
 ```bash
-source /home/wsde-47/esp/esp-idf/export.sh
+source /export.sh
 ```
 
 ### tshark 权限问题

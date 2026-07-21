@@ -1,12 +1,23 @@
 # P4 Independent-Window Replication Preregistration
 
-**Status:** FROZEN BEFORE DATA COLLECTION
+**Status:** AMENDED AND FROZEN BEFORE DATA COLLECTION
 
 **Earliest collection date:** 2026-07-15 (Asia/Tokyo)
 
 P4 is a temporal/network-window replication of the key Round 4 board-to-host
 QoS result. It is not an external-hardware replication and must not be described
 as one. No Round 6 formal run may be reused in P4.
+
+The precollection Wi-Fi startup amendment frozen on 2026-07-15 is part of this
+preregistration. See `P4_PRECOLLECTION_AMENDMENT_20260715.md`. It changes only
+the bounded association retry behavior; the design and analysis below remain
+unchanged.
+
+The mode-aware history smoke amendment frozen before formal data collection is
+also part of this preregistration. See
+`P4_SMOKE_GATE_AMENDMENT_20260715.md`. It corrects an inapplicable stateful
+history assertion for the stateless BEST_EFFORT writer without changing any
+firmware or formal-run acceptance rule.
 
 ## Window Independence Gate
 
@@ -94,8 +105,10 @@ source difference from Round 4 must be listed beside the comparison.
 
 ## Frozen Execution Entry Points
 
-The P4 firmware set is archived at
-`results/experiments/20260714_p4_firmware_set_c9489da`. On or after the earliest
+The superseded pre-amendment firmware set is retained at
+`results/experiments/20260714_p4_firmware_set_c9489da` and must not be used for
+collection. The amended P4 firmware set will be archived at
+`results/experiments/20260715_p4_firmware_set_amended`. On or after the earliest
 collection date, open the independent window with
 `scripts/experiment/run_p4_smoke_gates.py`; formal collection is then performed
 by `scripts/experiment/run_p4_formal.py` against the resulting

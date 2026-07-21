@@ -32,7 +32,7 @@
 
 ### G5: C++ echo 对端
 - **Status**: ✅ PASS
-- **Location**: `/home/wsde-47/mROS2-QoS/tools/echo_cpp/`
+- **Location**: `~/mROS2-QoS/tools/echo_cpp/`
 - **Executables**:
   - `echo_node`: 标准 C++ echo（替代 rclpy）
   - `echo_node_lossy`: 应用层丢包版本
@@ -139,11 +139,11 @@ results/experiments/<date>/
 
 ## 📝 配置文件位置
 
-- **Config.h**: `/home/wsde-47/mROS2-QoS/platform/rtps/config.h`
-- **Workspace**: `/home/wsde-47/mROS2-QoS/workspace/qos_eval/`
-- **C++ Echo**: `/home/wsde-47/mROS2-QoS/tools/echo_cpp/`
-- **实验脚本**: `/home/wsde-47/mROS2-QoS/scripts/experiment/`
-- **结果目录**: `/home/wsde-47/mROS2-QoS/results/`
+- **Config.h**: `~/mROS2-QoS/platform/rtps/config.h`
+- **Workspace**: `~/mROS2-QoS/workspace/qos_eval/`
+- **C++ Echo**: `~/mROS2-QoS/tools/echo_cpp/`
+- **实验脚本**: `~/mROS2-QoS/scripts/experiment/`
+- **结果目录**: `~/mROS2-QoS/results/`
 
 ---
 

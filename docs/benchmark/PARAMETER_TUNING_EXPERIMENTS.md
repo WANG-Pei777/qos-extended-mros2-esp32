@@ -7,12 +7,12 @@
 ## 配置文件位置
 
 ```
-/home/wsde-47/mROS2-QoS/platform/rtps/config.h
+~/mROS2-QoS/platform/rtps/config.h
 ```
 
 修改后需要重新编译：
 ```bash
-cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+cd ~/mROS2-QoS/workspace/qos_eval
 idf.py build flash
 ```
 
@@ -571,7 +571,7 @@ THREAD_POOL_NUM_READERS = 2
 
 1. **编译烧录**：
    ```bash
-   cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+   cd ~/mROS2-QoS/workspace/qos_eval
    idf.py build flash
    ```
 
@@ -582,7 +582,7 @@ THREAD_POOL_NUM_READERS = 2
 
 3. **运行测试**：
    ```bash
-   cd /home/wsde-47/mROS2-QoS
+   cd ~/mROS2-QoS
    ./scripts/validation/qos_verify.sh /dev/ttyUSB0
    ```
 

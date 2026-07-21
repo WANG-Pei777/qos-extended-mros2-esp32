@@ -35,7 +35,7 @@ wireshark --version
 ### ✅ 步骤 0.2：创建实验数据目录
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 mkdir -p results/experiments_2026
 cd results/experiments_2026
 
@@ -69,7 +69,7 @@ mkdir -p figures
 **在 WSL 终端执行：**
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 
 # 运行完整验证测试
@@ -116,7 +116,7 @@ RTT Results:
 ### ✅ 步骤 1B.1：切换到 upstream 测试环境
 
 ```bash
-cd /home/wsde-47/mros2_upstream_bench
+cd ~/mROS2-QoS/upstream_bench
 source /opt/ros/humble/setup.bash
 ```
 
@@ -165,7 +165,7 @@ micro_ros_agent udp4 --port 7408
 
 ```bash
 # 终端 2：烧录固件
-cd /home/wsde-47/microros_bench/micro_ros_espidf_component/examples/int32_publisher
+cd ~/mROS2-QoS/microros_bench/micro_ros_espidf_component/examples/int32_publisher
 idf.py flash monitor
 ```
 
@@ -181,7 +181,7 @@ idf.py flash monitor
 
 ```bash
 # 终端 3：运行测试脚本
-cd /home/wsde-47/microros_bench
+cd ~/mROS2-QoS/microros_bench
 source /opt/ros/humble/setup.bash
 python3 test_microros_rtt.py
 ```
@@ -411,10 +411,10 @@ frame.time_relative > 10 && frame.time_relative < 20
 
 显示过滤器（只看 ESP32 → Host）：
 ```
-ip.src == 10.54.75.107 && udp
+ip.src == 192.0.2.1 && udp
 ```
 
-**注意**：把 `10.54.75.107` 改成你的 ESP32 实际 IP
+**注意**：把 `192.0.2.1` 改成你的 ESP32 实际 IP
 
 ### 📊 步骤 2C.5：导出延迟数据
 
@@ -433,7 +433,7 @@ ip.src == 10.54.75.107 && udp
    - 选择 "AVG(*)"
    - 在旁边的 "Y Field" 输入：`frame.time_delta_displayed`
 3. X 轴间隔：改为 "1 sec"
-4. 应用显示过滤器：`ip.src == 10.54.75.107 && udp`
+4. 应用显示过滤器：`ip.src == 192.0.2.1 && udp`
 
 ### 📊 步骤 2C.7：截图 IO Graph
 
@@ -480,7 +480,7 @@ ip.src == 10.54.75.107 && udp
 创建一个新的测试脚本：
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 nano scripts/test_late_joiner.py
 ```
 
@@ -541,7 +541,7 @@ chmod +x scripts/test_late_joiner.py
 确认 `workspace/qos_eval/main.cpp` 中发布者使用 TRANSIENT_LOCAL：
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 grep -A 5 "Durability" workspace/qos_eval/main/main.cpp
 ```
 
@@ -570,7 +570,7 @@ idf.py build flash
 **等 ESP32 启动完成后**（约 10 秒），运行：
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 python3 scripts/test_late_joiner.py
 ```
@@ -595,7 +595,7 @@ python3 scripts/test_late_joiner.py
 在另一个终端监控 ESP32：
 
 ```bash
-cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+cd ~/mROS2-QoS/workspace/qos_eval
 idf.py monitor
 ```
 
@@ -765,7 +765,7 @@ File → Open → capture_microros_agent.pcapng
 ## 实验 3.1：心跳周期调节（最重要）
 
 ### 参数说明
-- **文件位置**：`/home/wsde-47/mROS2-QoS/platform/rtps/config.h`
+- **文件位置**：`~/mROS2-QoS/platform/rtps/config.h`
 - **参数行号**：第 90 行
 - **参数名**：`SF_WRITER_HB_PERIOD_MS`
 - **默认值**：4000 ms
@@ -774,7 +774,7 @@ File → Open → capture_microros_agent.pcapng
 ### ✅ 步骤 3.1.1：备份原始配置
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 cp platform/rtps/config.h platform/rtps/config.h.backup
 ```
 
@@ -799,7 +799,7 @@ const uint16_t SF_WRITER_HB_PERIOD_MS = 100;
 ### ✅ 步骤 3.1.3：编译并烧录
 
 ```bash
-cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+cd ~/mROS2-QoS/workspace/qos_eval
 idf.py build flash
 ```
 
@@ -812,7 +812,7 @@ idf.py build flash
 ### ✅ 步骤 3.1.5：运行测试
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 ./scripts/validation/qos_verify.sh /dev/ttyUSB0
 ```
@@ -839,7 +839,7 @@ source /opt/ros/humble/setup.bash
 ### ✅ 步骤 3.1.9：恢复默认值
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 cp platform/rtps/config.h.backup platform/rtps/config.h
 ```
 
@@ -897,7 +897,7 @@ const uint8_t HISTORY_SIZE_STATEFUL = 3;
 cd workspace/qos_eval
 idf.py build flash
 
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 ./scripts/validation/qos_verify.sh /dev/ttyUSB0
 ```
@@ -1120,7 +1120,7 @@ const Duration_t SPDP_DEFAULT_REMOTE_LEASE_DURATION = {5, 0};
 | ACKNACK 包 | `rtps.sm.id == 0x06` |
 | DATA 包 | `rtps.sm.id == 0x15` |
 | 特定端口 | `udp.port == 7400 \|\| udp.port == 7411` |
-| 特定 IP | `ip.addr == 10.54.75.107` |
+| 特定 IP | `ip.addr == 192.0.2.1` |
 | 时间窗口 | `frame.time_relative > 10 && frame.time_relative < 20` |
 
 ## 参数快速查找表
@@ -1142,21 +1142,21 @@ const Duration_t SPDP_DEFAULT_REMOTE_LEASE_DURATION = {5, 0};
 
 ### 编译和烧录
 ```bash
-cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+cd ~/mROS2-QoS/workspace/qos_eval
 idf.py build flash
 idf.py monitor  # 查看日志
 ```
 
 ### 运行测试
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source /opt/ros/humble/setup.bash
 ./scripts/validation/qos_verify.sh /dev/ttyUSB0
 ```
 
 ### upstream 测试
 ```bash
-cd /home/wsde-47/mros2_upstream_bench
+cd ~/mROS2-QoS/upstream_bench
 source /opt/ros/humble/setup.bash
 python3 test_upstream_rtt.py
 ```
@@ -1167,7 +1167,7 @@ python3 test_upstream_rtt.py
 micro_ros_agent udp4 --port 7408
 
 # 终端 2
-cd /home/wsde-47/microros_bench
+cd ~/mROS2-QoS/microros_bench
 python3 test_microros_rtt.py
 ```
 

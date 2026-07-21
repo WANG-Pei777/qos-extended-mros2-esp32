@@ -53,7 +53,7 @@ docs/benchmark/ROUND4_TOP_TIER_PROTOCOL.md.
 
 **Hardware**: ESP32-S3 functional ✅
 **Firmware**: v0.3.1-round2-fixes (991df75)
-**WSL IP**: 10.84.233.195
+**WSL IP**: 192.0.2.2
 **Serial**: /dev/ttyUSB0
 
 ---

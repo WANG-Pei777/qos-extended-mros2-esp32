@@ -39,16 +39,16 @@
 ========================================
 
 1. 查看文档导航：
-   cat /home/wsde-47/mROS2-QoS/docs/benchmark/README_EXPERIMENTS.md
+   cat ~/mROS2-QoS/docs/benchmark/README_EXPERIMENTS.md
 
 2. 打开操作手册：
-   cat /home/wsde-47/mROS2-QoS/docs/benchmark/EXPERIMENTAL_PROCEDURE.md
+   cat ~/mROS2-QoS/docs/benchmark/EXPERIMENTAL_PROCEDURE.md
 
 3. 打开每日清单：
-   cat /home/wsde-47/mROS2-QoS/docs/benchmark/QUICK_START_CHECKLIST.md
+   cat ~/mROS2-QoS/docs/benchmark/QUICK_START_CHECKLIST.md
 
 4. 创建实验目录：
-   cd /home/wsde-47/mROS2-QoS
+   cd ~/mROS2-QoS
    mkdir -p results/experiments_2026/{raw_data,figures,analysis}
 
 5. 开始第一个实验：

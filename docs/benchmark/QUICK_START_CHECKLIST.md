@@ -27,7 +27,7 @@
 
 ### ✅ 目录结构
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 mkdir -p results/experiments_2026/{raw_data,figures,analysis}
 ```
 

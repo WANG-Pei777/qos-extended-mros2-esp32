@@ -66,7 +66,7 @@ The watchdog is **NOT caused by F2 code changes** directly. Evidence:
 ### Option A: Revert to Working Version (Fast, Low Risk)
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 git checkout 096913c workspace/qos_eval/main/app.cpp
 cd workspace/qos_eval
 source ~/esp-idf/export.sh

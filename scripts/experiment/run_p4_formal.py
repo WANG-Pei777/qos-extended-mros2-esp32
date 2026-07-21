@@ -29,6 +29,7 @@ from run_round6_smoke_gates import (
 
 ACCEPTED_RUNS_PER_VISIT = 3
 EXPECTED_VISITS = 60
+BOARD_NETWORK_TIMEOUT_SECONDS = 210
 LOSS_SPECS = {
     0: {"denominator": 0, "effective": 0.0},
     5: {"denominator": 20, "effective": 5.0},
@@ -233,7 +234,7 @@ def parse_args():
     parser.add_argument("--results-id", required=True)
     parser.add_argument("--window-manifest", type=Path, required=True)
     parser.add_argument("--serial-port", default="/dev/ttyUSB0")
-    parser.add_argument("--board-ip", default="10.219.224.107")
+    parser.add_argument("--board-ip", default="192.0.2.1")
     parser.add_argument("--interface", default="eth1")
     parser.add_argument("--flash-baud", type=int, default=460800)
     parser.add_argument("--max-visits", type=int)
@@ -363,7 +364,11 @@ def main():
             project_root, firmware_set, variant, args.serial_port,
             args.flash_baud, visit_dir,
         )
-        require_network(args.board_ip, args.interface)
+        require_network(
+            args.board_ip,
+            args.interface,
+            timeout_seconds=BOARD_NETWORK_TIMEOUT_SECONDS,
+        )
         condition = condition_for(qos, target_loss)
         csv_path = results_root / f"mros2qos_{condition}.csv"
         transport_ledger = results_root / "TRANSPORT_INGRESS_GACT_LEDGER.md"

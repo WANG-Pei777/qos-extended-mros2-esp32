@@ -46,7 +46,7 @@ echo "[backup] Created: ${CONFIG_H}.sweep_backup"
 
 # Source ESP-IDF
 set +u
-source /home/wsde-47/esp-idf/export.sh > /dev/null 2>&1
+source "${IDF_PATH:?Set IDF_PATH}/export.sh" > /dev/null 2>&1
 set -u
 
 for VALUE in "${VALUES[@]}"; do

@@ -24,12 +24,14 @@ from run_round6_smoke_gates import (
     sha256_file,
     validate_capture_seconds,
 )
+from p4_reset_recovery import recover_board_network
 
 
 EARLIEST_DATE = date(2026, 7, 15)
 COLLECTION_TIMEZONE = ZoneInfo("Asia/Tokyo")
 QOS_MODES = ("reliable", "best_effort")
 REQUIRED_RUNS_PER_QOS = 3
+BOARD_NETWORK_TIMEOUT_SECONDS = 210
 
 
 def require_collection_window(moment=None):
@@ -99,21 +101,8 @@ def stale_processes(project_root):
     return sorted(set(found))
 
 
-def reset_board_network(serial_port):
-    import serial
-
-    started = datetime.now(timezone.utc)
-    with serial.Serial(serial_port, 115200, timeout=0.2) as connection:
-        connection.dtr = False
-        connection.rts = True
-        time.sleep(0.15)
-        connection.rts = False
-        time.sleep(0.5)
-    return {
-        "method": "serial_rts_hardware_reset",
-        "serial_port": serial_port,
-        "reset_at_utc": started.isoformat(),
-    }
+def reset_board_network(serial_port, board_ip):
+    return recover_board_network(serial_port, board_ip)
 
 
 def write_window_evidence(
@@ -157,6 +146,30 @@ def write_window_evidence(
     return evidence
 
 
+def open_window_network(
+    results_root,
+    board_ip,
+    interface,
+    serial_port,
+    local_start,
+    boot_time,
+):
+    board_reset = reset_board_network(serial_port, board_ip)
+    require_network(
+        board_ip,
+        interface,
+        timeout_seconds=BOARD_NETWORK_TIMEOUT_SECONDS,
+    )
+    return write_window_evidence(
+        results_root,
+        board_ip,
+        interface,
+        local_start,
+        boot_time,
+        board_reset,
+    )
+
+
 def parse_args():
     project_root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser()
@@ -164,7 +177,7 @@ def parse_args():
     parser.add_argument("--firmware-set", type=Path, required=True)
     parser.add_argument("--results-id", required=True)
     parser.add_argument("--serial-port", default="/dev/ttyUSB0")
-    parser.add_argument("--board-ip", default="10.219.224.107")
+    parser.add_argument("--board-ip", default="192.0.2.1")
     parser.add_argument("--interface", default="eth1")
     parser.add_argument("--capture-seconds", type=int, default=60)
     parser.add_argument("--flash-baud", type=int, default=460800)
@@ -194,19 +207,24 @@ def main():
     stale = stale_processes(project_root)
     if stale:
         raise SystemExit("stale experiment processes detected:\n" + "\n".join(stale))
-    require_network(args.board_ip, args.interface)
+    results_root = project_root / "results/experiments" / args.results_id
     try:
-        board_reset = reset_board_network(args.serial_port)
+        network_evidence = open_window_network(
+            results_root,
+            args.board_ip,
+            args.interface,
+            args.serial_port,
+            local_start,
+            boot_time,
+        )
     except (OSError, ValueError) as exc:
         raise SystemExit(f"board reset failed: {exc}") from exc
-    require_network(args.board_ip, args.interface, timeout_seconds=90)
     harness_commit = git_output(project_root, "rev-parse", "HEAD")
     master_path = set_root / "manifest.json"
     master = json.loads(master_path.read_text(encoding="utf-8"))
     if master.get("classification") != "p4_replication_firmware_set":
         raise SystemExit("firmware set is not a P4 replication set")
     variants = load_variants(set_root, master)
-    results_root = project_root / "results/experiments" / args.results_id
     smoke_root = results_root / "smoke"
     window_path = results_root / "window_manifest.json"
     if window_path.exists():
@@ -232,14 +250,7 @@ def main():
         "host_binary_sha256": sha256_file(
             project_root / "tools/echo_cpp/install/echo_cpp/lib/echo_cpp/echo_node"
         ),
-        "network": write_window_evidence(
-            results_root,
-            args.board_ip,
-            args.interface,
-            local_start,
-            boot_time,
-            board_reset,
-        ),
+        "network": network_evidence,
         "smoke_requirement": {
             "runs_per_qos": REQUIRED_RUNS_PER_QOS,
             "host_implementation": "cpp",
@@ -258,6 +269,11 @@ def main():
             args.serial_port,
             args.flash_baud,
             smoke_root / qos,
+        )
+        require_network(
+            args.board_ip,
+            args.interface,
+            timeout_seconds=BOARD_NETWORK_TIMEOUT_SECONDS,
         )
         runs = [
             run_smoke(

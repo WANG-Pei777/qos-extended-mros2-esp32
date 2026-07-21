@@ -79,7 +79,7 @@
 ## 0. 开工检查(5 分钟)
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 pgrep -af "run_matrix|sweep|reset_and_log|echo_reply|echo_node"   # 有残留全杀
 pkill -f echo_reply.py; pkill -f echo_node
 ip -4 addr show eth1 | grep inet        # 记录今日 WSL IP(昨夜已变网:10.84.233.x 段)
@@ -254,7 +254,7 @@ git worktree remove /tmp/prefix --force
 |---|---|---|---|
 | mQoS | qos_eval(HEAD)| `qos_host.sh all` | — |
 | upstream | `~/upstream_bench/.../echoreply_string`(先重建:**换网后无需改**,它不烤对端 IP)| `python3 scripts/echo_best_effort.py` | 话题 /step10_best_effort |
-| micro-ROS | `~/microros_bench/.../int32_publisher` | `/snap/bin/micro-ros-agent udp4 --port 7408` | **agent IP 烤在 sdkconfig 里,还是旧网 10.54.75.195!必须改 `sdkconfig.defaults.local` 为今日 WSL IP 并重建重烧** |
+| micro-ROS | `~/microros_bench/.../int32_publisher` | `/snap/bin/micro-ros-agent udp4 --port 7408` | **agent IP 烤在 sdkconfig 里,还是旧网 192.0.2.2!必须改 `sdkconfig.defaults.local` 为今日 WSL IP 并重建重烧** |
 
 每臂段前烧对应固件,段后不必恢复(下一段会烧);**全部结束后恢复 mQoS 基线并复验**。
 解析靠 F1 第 5 条的新正则。

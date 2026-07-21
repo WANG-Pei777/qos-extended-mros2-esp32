@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PCAP_DIR = os.environ.get("PCAP_DIR", os.path.join(ROOT, "results", "wireshark"))
 OUT_DIR = os.path.join(ROOT, "docs", "figures")
-BOARD = os.environ.get("BOARD_IP", "10.54.75.107")
-HOST = os.environ.get("HOST_IP", "10.54.75.195")
+BOARD = os.environ.get("BOARD_IP", "192.0.2.1")
+HOST = os.environ.get("HOST_IP", "192.0.2.2")
 
 PCAPS = {
     "baseline": "rtps_bidirectional_20260706_183830.pcapng",

@@ -11,7 +11,7 @@
 ### 1. 重新烧录固件 (必需)
 
 ```bash
-cd /home/wsde-47/mROS2-QoS/workspace/qos_eval
+cd ~/mROS2-QoS/workspace/qos_eval
 source ~/esp-idf/export.sh
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
@@ -24,7 +24,7 @@ idf.py -p /dev/ttyUSB0 flash monitor
 ### 2. 基线验证
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 bash scripts/validation/qos_flash.sh all /dev/ttyUSB0
 ```
 

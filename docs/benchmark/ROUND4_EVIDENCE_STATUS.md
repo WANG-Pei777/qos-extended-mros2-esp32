@@ -1,12 +1,35 @@
 # ROUND4 Evidence Status
 
+## 2026-07-15 Evidence Update
+
+Three upgrades now supersede several gaps listed in the historical status
+below:
+
+- `P4_FORMAL_RESULTS.md` records a preregistered independent-window
+  replication with 180 accepted runs, 180 unique PCAPs, zero rejected runs,
+  a PASS audit, and a verified release seal. The large board-to-host RELIABLE
+  RTT-tail direction replicates at both 5% and nominal 15% loss.
+- `ROUND6_FORMAL_RESULTS.md` records the preregistered history-depth and
+  heartbeat intervention. It supports the faster-heartbeat application
+  outcome and does not support a runtime-depth or interaction effect.
+- `THREE_SYSTEM_FORMAL_RESULTS.md` records the semantically aligned external
+  baseline with 300 accepted runs across mROS2-QoS, upstream mros2-esp32, and
+  micro-ROS.
+
+The optional host-to-board per-message 300-run matrix is intentionally
+deferred. It is not needed for the P4, Round 6, or three-system conclusions.
+The paper should omit a cross-direction per-message-tail claim unless that
+matrix is later preregistered and collected with the current per-run PCAP and
+exact-binary standard. Historical host-to-board run-level evidence may still
+support a clearly labeled testbed observation.
+
 ## Formal Result Sets
 
 Historical host-to-board matrix:
 
 - result directory: `results/experiments/20260711_net37`
 - source commit in manifests: `64e7ec710b3342b838b9561ec5808e882c082efe`
-- board IP: `10.37.12.107`
+- board IP: `192.0.2.1`
 - direction: host-to-board netem only
 - repetitions: 30 accepted runs per QoS/loss cell
 - RTT granularity: run-level summaries
@@ -15,7 +38,7 @@ Historical board-to-host matrix:
 
 - result directory: `results/experiments/20260712_b2h_net37`
 - source commit in manifests: `4837a369bad28dc8b84e495f8cba22d6c556a1fd`
-- board IP: `10.37.12.107`
+- board IP: `192.0.2.1`
 - direction: board-to-host ingress `tc gact random` only
 - repetitions: 30 accepted runs per QoS/loss cell
 - RTT granularity: run-level summaries
@@ -25,8 +48,8 @@ Current board-to-host per-message RTT matrix:
 - result directory: `results/experiments/20260712_rtt_samples_b2h_net219_v2`
 - source commit in every manifest:
   `d7f8ab446240e93b8b05a27816313f1338c2a629`
-- board IP: `10.219.224.107`
-- host IP: `10.219.224.195`
+- board IP: `192.0.2.1`
+- host IP: `192.0.2.2`
 - direction: board-to-host ingress `tc gact random` only
 - loss levels: 0, 1, 5, 10, and 15 percent
 - repetitions: 30 accepted runs per QoS/loss cell, 300 total runs
@@ -134,7 +157,11 @@ without a measured delivery advantage, and the effect differed from the
 host-to-board impairment result. This is a testbed observation, not a general
 DDS reliability theorem.
 
-## Remaining Gaps Before A Top-Tier Submission
+## Historical Remaining Gaps Before A Top-Tier Submission
+
+This list was written before the 2026-07-15 P4, Round 6, and three-system
+closures above. Items 3, 4, and 6 are now addressed; item 5 remains optional
+only if the paper makes a cross-direction per-message-tail comparison.
 
 1. Restore board/host discovery in a clean network window and rerun the
    22-assertion suite. Exact-binary verification of the existing matrix is no

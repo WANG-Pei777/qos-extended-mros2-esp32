@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "status": "draft_no_data",
+  "drafted": "2026-07-16",
+  "primary_statistical_unit": "independently_reset_hardware_run",
+  "accepted_runs_per_cell": 30,
+  "visits_per_family": 10,
+  "accepted_runs_per_cell_per_visit": 3,
+  "reliability_reuse_candidate": {
+    "source": "round4_formal_matrix",
+    "directions": ["h2b", "b2h"],
+    "reliability": ["best_effort", "reliable"],
+    "loss_pct": [0, 1, 5, 10, 15],
+    "cells": 20,
+    "accepted_runs": 600,
+    "gate": "exact_semantics_and_hash_binding_required"
+  },
+  "new_families": {
+    "history_depth": {
+      "direction": "b2h",
+      "fixed": {
+        "reliability": "reliable",
+        "history": "keep_last",
+        "payload_bytes": 64,
+        "compile_time_capacity": 40
+      },
+      "cells": [
+        {"id": "H00", "role": "anchor", "depth": 20, "burst_size": 10, "loss_pct": 5},
+        {"id": "H01", "role": "depth_main", "depth": 5, "burst_size": 10, "loss_pct": 5},
+        {"id": "H02", "role": "depth_main", "depth": 40, "burst_size": 10, "loss_pct": 5},
+        {"id": "H03", "role": "burst_main", "depth": 20, "burst_size": 1, "loss_pct": 5},
+        {"id": "H04", "role": "burst_main", "depth": 20, "burst_size": 40, "loss_pct": 5},
+        {"id": "H05", "role": "loss_main", "depth": 20, "burst_size": 10, "loss_pct": 0},
+        {"id": "H06", "role": "loss_main", "depth": 20, "burst_size": 10, "loss_pct": 15},
+        {"id": "H07", "role": "interaction_corner", "depth": 5, "burst_size": 40, "loss_pct": 15},
+        {"id": "H08", "role": "interaction_corner", "depth": 40, "burst_size": 40, "loss_pct": 15}
+      ]
+    },
+    "durability": {
+      "direction": "b2h",
+      "fixed": {
+        "reliability": "reliable",
+        "payload_bytes": 64,
+        "compile_time_capacity": 40
+      },
+      "cells": [
+        {"id": "D00", "role": "durability_delay_factorial", "durability": "volatile", "late_join_s": 0, "cache_depth": 10},
+        {"id": "D01", "role": "durability_delay_factorial", "durability": "transient_local", "late_join_s": 0, "cache_depth": 10},
+        {"id": "D02", "role": "durability_delay_factorial", "durability": "volatile", "late_join_s": 2, "cache_depth": 10},
+        {"id": "D03", "role": "durability_delay_factorial", "durability": "transient_local", "late_join_s": 2, "cache_depth": 10},
+        {"id": "D04", "role": "durability_delay_factorial", "durability": "volatile", "late_join_s": 10, "cache_depth": 10},
+        {"id": "D05", "role": "durability_delay_factorial", "durability": "transient_local", "late_join_s": 10, "cache_depth": 10},
+        {"id": "D06", "role": "cache_depth_interaction", "durability": "transient_local", "late_join_s": 10, "cache_depth": 1},
+        {"id": "D07", "role": "cache_depth_interaction", "durability": "transient_local", "late_join_s": 10, "cache_depth": 40}
+      ]
+    },
+    "deadline": {
+      "direction": "h2b",
+      "fixed": {
+        "reliability": "reliable",
+        "impairment_direction": "board_ingress_only"
+      },
+      "cells": [
+        {"id": "DL00", "role": "anchor", "deadline_ms": 100, "publish_period_ms": 100, "delay_ms": 0},
+        {"id": "DL01", "role": "deadline_main", "deadline_ms": 50, "publish_period_ms": 100, "delay_ms": 0},
+        {"id": "DL02", "role": "deadline_main", "deadline_ms": 500, "publish_period_ms": 100, "delay_ms": 0},
+        {"id": "DL03", "role": "period_main", "deadline_ms": 100, "publish_period_ms": 20, "delay_ms": 0},
+        {"id": "DL04", "role": "delay_main", "deadline_ms": 100, "publish_period_ms": 100, "delay_ms": 50},
+        {"id": "DL05", "role": "interaction_corner", "deadline_ms": 50, "publish_period_ms": 100, "delay_ms": 50},
+        {"id": "DL06", "role": "interaction_corner", "deadline_ms": 100, "publish_period_ms": 20, "delay_ms": 50},
+        {"id": "DL07", "role": "interaction_corner", "deadline_ms": 500, "publish_period_ms": 20, "delay_ms": 50},
+        {"id": "DL08", "role": "disabled_baseline", "deadline_ms": null, "publish_period_ms": 100, "delay_ms": 0}
+      ]
+    },
+    "lifespan": {
+      "direction": "b2h",
+      "fixed": {
+        "reliability": "reliable",
+        "delay_location": "board_pre_transmit_release_hold"
+      },
+      "cells": [
+        {"id": "LS00", "role": "anchor", "lifespan_ms": 200, "release_delay_ms": 100},
+        {"id": "LS01", "role": "lifespan_main", "lifespan_ms": null, "release_delay_ms": 100},
+        {"id": "LS02", "role": "lifespan_main", "lifespan_ms": 50, "release_delay_ms": 100},
+        {"id": "LS03", "role": "lifespan_main", "lifespan_ms": 1000, "release_delay_ms": 100},
+        {"id": "LS04", "role": "delay_main", "lifespan_ms": 200, "release_delay_ms": 0},
+        {"id": "LS05", "role": "delay_main", "lifespan_ms": 200, "release_delay_ms": 300},
+        {"id": "LS06", "role": "interaction_corner", "lifespan_ms": 50, "release_delay_ms": 300},
+        {"id": "LS07", "role": "interaction_corner", "lifespan_ms": 1000, "release_delay_ms": 300}
+      ]
+    },
+    "liveliness": {
+      "direction": "h2b",
+      "fixed": {
+        "reliability": "reliable",
+        "heartbeat_period_max_ms": 100,
+        "impairment_direction": "board_ingress_only"
+      },
+      "cells": [
+        {"id": "LV00", "role": "anchor", "lease_s": 2, "outage_s": 1},
+        {"id": "LV01", "role": "lease_main", "lease_s": 0.5, "outage_s": 1},
+        {"id": "LV02", "role": "lease_main", "lease_s": 5, "outage_s": 1},
+        {"id": "LV03", "role": "outage_main", "lease_s": 2, "outage_s": 0.25},
+        {"id": "LV04", "role": "outage_main", "lease_s": 2, "outage_s": 3},
+        {"id": "LV05", "role": "outage_main", "lease_s": 2, "outage_s": 6},
+        {"id": "LV06", "role": "interaction_corner", "lease_s": 0.5, "outage_s": 3},
+        {"id": "LV07", "role": "interaction_corner", "lease_s": 5, "outage_s": 6}
+      ]
+    },
+    "resource_limits": {
+      "direction": "b2h",
+      "fixed": {
+        "reliability": "reliable",
+        "history": "keep_all",
+        "compile_time_capacity": 100,
+        "max_bytes": "nonbinding",
+        "ack_suppression_episode": "pilot_to_freeze"
+      },
+      "cells": [
+        {"id": "R00", "role": "anchor", "max_samples": 20, "payload_bytes": 512, "publish_rate_hz": 50},
+        {"id": "R01", "role": "limit_main", "max_samples": 5, "payload_bytes": 512, "publish_rate_hz": 50},
+        {"id": "R02", "role": "limit_main", "max_samples": 100, "payload_bytes": 512, "publish_rate_hz": 50},
+        {"id": "R03", "role": "payload_main", "max_samples": 20, "payload_bytes": 64, "publish_rate_hz": 50},
+        {"id": "R04", "role": "payload_main", "max_samples": 20, "payload_bytes": 2048, "publish_rate_hz": 50},
+        {"id": "R05", "role": "rate_main", "max_samples": 20, "payload_bytes": 512, "publish_rate_hz": 10},
+        {"id": "R06", "role": "rate_main", "max_samples": 20, "payload_bytes": 512, "publish_rate_hz": 100},
+        {"id": "R07", "role": "interaction_corner", "max_samples": 5, "payload_bytes": 2048, "publish_rate_hz": 100},
+        {"id": "R08", "role": "interaction_corner", "max_samples": 100, "payload_bytes": 2048, "publish_rate_hz": 100}
+      ]
+    }
+  },
+  "expected_new_cells": 51,
+  "expected_new_accepted_runs": 1530,
+  "expected_combined_new_runs_after_h2b": 3270
+}

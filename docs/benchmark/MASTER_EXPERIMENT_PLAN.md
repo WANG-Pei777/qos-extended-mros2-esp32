@@ -1,25 +1,28 @@
 # 实施方案总纲 (Master Experiment Plan)
 
-**版本** 1.0 · 2026-07-07 · 面向顶会投稿
-**状态** 冻结前草案。本文件是实验的**权威总纲**；`EXPERIMENT_DESIGN.md` /
-`EXPERIMENTAL_PROCEDURE.md` / `PARAMETER_TUNING_EXPERIMENTS.md` 降级为**操作细节参考**。
-凡本文件与它们冲突处,以本文件为准(修订原因见 §3)。
+**版本** 1.1 · 2026-07-15 · 面向顶会投稿
+**状态** 历史实验规划，已被正式结果取代。当前论文主张、统计结果和禁止外推边界
+以 `docs/papers/CLAIM_EVIDENCE_MATRIX.md`、`docs/papers/EVALUATION_DRAFT.md` 及
+三个 `*_FORMAL_RESULTS.md` 为准。本文后续实验清单保留用于追溯规划演变，不能再
+作为结果或论文 claim 的权威来源。
 
 ---
 
 ## 1. 研究定位与主张 (Claims)
 
-**一句话主张:** 在资源受限 MCU 上,让 embedded RTPS 节点作为**一等 DDS 对等体**
-(无 agent) 承载完整 QoS 是可行且高效的;我们量化其收益、代价,并刻画并修复其
-特有的发现可靠性缺陷。
+**一句话主张:** 在资源受限 MCU 上，agent-less embedded RTPS 可以实现并验证
+选定的 DDS QoS 语义；但 QoS 名称本身不能预测应用结果。在定向丢包下，RELIABLE
+产生秒级 RTT 尾延迟且没有交付率优势，该结果在新时间/网络窗口复现，而随机化机制
+实验表明 heartbeat timing 是有效控制，增加 history depth 在本工作负载下不受支持。
 
-三条可辩护的贡献(每条都必须有实测+统计支撑,不许用"最快/最好"这类措辞):
+四条可辩护的贡献(每条都必须有实测+统计支撑,不许用"最快/最好"这类措辞):
 
 | # | 贡献 | 支撑实验 | 对照 |
 |---|------|----------|------|
-| C1 | agent-less 直连 QoS 的**数据路径延迟**优于 agent 架构 | E1 | micro-ROS |
-| C2 | QoS 扩展相对上游是**近零数据路径代价 + 可量化的空间代价** | E1,E4 | upstream |
-| C3 | 发现可靠性缺陷的**发现→根因→修复**(GUID 熵/租约) | E3 | 修复前 vs 后 |
+| C1 | 选定 QoS 语义的结构化 agent-less 实现与分级真机证据 | QoS evidence matrix | upstream/current path |
+| C2 | RELIABLE 在定向丢包下的秒级 RTT 尾延迟代价及 P4 独立窗口复现 | P4, Round 4 | BEST_EFFORT |
+| C3 | heartbeat period 的随机化机制干预有效，history depth 效应不受支持 | Round 6 | 250/1000/4000 ms; depth 5/10/20/40 |
+| C4 | 三系统展示架构权衡：无显著 RTT 胜者，持续 Agent 条件下 micro-ROS ready 更快 | three-system formal | upstream, micro-ROS |
 
 > ⚠️ 措辞纪律:实验目标一律写成"表征/量化/比较",不写"证明我们最快"。
 > 结论让数据说;确认偏误是系统类论文被拒的高频原因。

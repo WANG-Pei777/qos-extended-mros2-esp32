@@ -50,7 +50,7 @@ fi
 echo ""
 echo "[Test 3] Flash size parsing..."
 cd "${PROJECT_ROOT}/workspace/qos_eval"
-source /home/wsde-47/esp-idf/export.sh > /dev/null 2>&1
+source "${IDF_PATH:?Set IDF_PATH}/export.sh" > /dev/null 2>&1
 FLASH_SIZE=$(idf.py size 2>&1 | grep ".bin binary size" | grep -oP '0x[0-9a-f]+' | head -1)
 if [ -n "${FLASH_SIZE}" ] && [ "${FLASH_SIZE}" != "0" ]; then
     echo "[PASS] Flash size parsed: ${FLASH_SIZE}"

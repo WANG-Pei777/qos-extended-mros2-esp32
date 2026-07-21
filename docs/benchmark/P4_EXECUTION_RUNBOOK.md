@@ -1,7 +1,8 @@
 # P4 Independent-Window Execution Runbook
 
 This runbook executes the design frozen in
-`P4_INDEPENDENT_WINDOW_PREREGISTRATION.md`. Do not collect before
+`P4_INDEPENDENT_WINDOW_PREREGISTRATION.md` and its 2026-07-15 precollection
+Wi-Fi startup and mode-aware history smoke amendments. Do not collect before
 2026-07-15 00:00 Asia/Tokyo, reuse the pre-gate WSL session, or change the
 commands after inspecting P4 outcomes.
 
@@ -12,7 +13,7 @@ start Ubuntu again, and re-associate or restart the dedicated AP/board network
 path. Then enter the repository and load ESP-IDF:
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 source "$HOME/esp-idf/export.sh"
 ```
 
@@ -20,7 +21,7 @@ Use one immutable result identifier for every subsequent command:
 
 ```bash
 export P4_RESULTS_ID=20260715_p4_independent
-export P4_FIRMWARE_SET="$PWD/results/experiments/20260714_p4_firmware_set_c9489da"
+export P4_FIRMWARE_SET="$PWD/results/experiments/20260715_p4_firmware_set_amended"
 export P4_RESULTS="$PWD/results/experiments/$P4_RESULTS_ID"
 ```
 
@@ -32,7 +33,7 @@ python3 scripts/experiment/run_p4_pipeline.py \
   --firmware-set "$P4_FIRMWARE_SET" \
   --results-id "$P4_RESULTS_ID" \
   --serial-port /dev/ttyUSB0 \
-  --board-ip 10.219.224.107 \
+  --board-ip 192.0.2.1 \
   --interface eth1 \
   --new-window-ack \
   --network-reassociated-ack
@@ -48,7 +49,7 @@ python3 scripts/experiment/run_p4_smoke_gates.py \
   --firmware-set "$P4_FIRMWARE_SET" \
   --results-id "$P4_RESULTS_ID" \
   --serial-port /dev/ttyUSB0 \
-  --board-ip 10.219.224.107 \
+  --board-ip 192.0.2.1 \
   --interface eth1 \
   --new-window-ack \
   --network-reassociated-ack
@@ -65,7 +66,7 @@ python3 scripts/experiment/run_p4_formal.py \
   --results-id "$P4_RESULTS_ID" \
   --window-manifest "$P4_RESULTS/window_manifest.json" \
   --serial-port /dev/ttyUSB0 \
-  --board-ip 10.219.224.107 \
+  --board-ip 192.0.2.1 \
   --interface eth1
 ```
 
@@ -98,7 +99,7 @@ python3 scripts/experiment/analyze_p4_complete.py "$P4_RESULTS" \
 python3 scripts/experiment/analyze_p4_wire.py "$P4_RESULTS" \
   --audit-report "$P4_RESULTS/analysis/formal_audit_report.json" \
   --window-manifest "$P4_RESULTS/window_manifest.json" \
-  --board-ip 10.219.224.107 \
+  --board-ip 192.0.2.1 \
   --output-dir "$P4_RESULTS/analysis/wire_92e5218"
 ```
 

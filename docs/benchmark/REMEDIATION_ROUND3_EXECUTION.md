@@ -38,7 +38,7 @@ pgrep -af "echo_node|echo_reply" && echo "STILL ALIVE - STOP" || echo CLEAN
 ### S2. 回退冻结违规,按原始工单重做 F2
 
 ```bash
-cd /home/wsde-47/mROS2-QoS
+cd ~/mROS2-QoS
 git revert --no-edit 9f192d1
 ```
 然后编辑 `tools/echo_cpp/src/echo_node.cpp` **和** `echo_node_lossy.cpp`:
@@ -149,7 +149,7 @@ git worktree remove /tmp/prefix --force
 |---|---|---|---|
 | mQoS | qos_eval HEAD | `qos_host.sh all` | — |
 | upstream | `~/upstream_bench/.../echoreply_string` | `python3 scripts/echo_best_effort.py` | 话题 /step10_best_effort |
-| micro-ROS | `~/microros_bench/.../int32_publisher` | `/snap/bin/micro-ros-agent udp4 --port 7408` | **sdkconfig 里 agent IP 是旧网 10.54.75.195,必须改成今日 WSL IP(ip addr show eth1)再重建重烧** |
+| micro-ROS | `~/microros_bench/.../int32_publisher` | `/snap/bin/micro-ros-agent udp4 --port 7408` | **sdkconfig 里 agent IP 是旧网 192.0.2.2,必须改成今日 WSL IP(ip addr show eth1)再重建重烧** |
 
 解析靠 run_matrix 的 `RTT_FINAL` 备用正则(实测 upstream 串口确有该行)。
 全臂结束恢复 mQoS 基线 + 22 项 verify。
