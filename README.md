@@ -1,4 +1,4 @@
-# mROS2-ESP32 QoS Hardware Validation
+# qos-extended-mros2-esp32
 
 This repository contains the mROS2-ESP32 QoS implementation, ESP32-S3 firmware,
 controlled network experiments, and reproducible analysis tooling:
