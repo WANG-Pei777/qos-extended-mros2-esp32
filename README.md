@@ -47,7 +47,7 @@ docs/qos/QOS_EVIDENCE_MATRIX.md
 Clone this repository:
 
 ```bash
-git clone https://github.com/hal-lab-u-tokyo/mROS2-QoS.git
+git clone https://github.com/WANG-Pei777/qos-extended-mros2-esp32.git mROS2-QoS
 cd mROS2-QoS
 ```
 
