@@ -1,0 +1,4 @@
+#ifndef HISTORY_TEST_RTPS_CONFIG_H
+#define HISTORY_TEST_RTPS_CONFIG_H
+
+#endif

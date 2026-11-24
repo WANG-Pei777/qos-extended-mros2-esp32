@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "status": "family_harness_smoke_complete_formal_blocked",
+  "formal_launch_allowed": false,
+  "frozen_schedule_sha256": "3326942f48098fc0adfb0fdee03a81574add6b34ad34c0b30337078aa9734d09",
+  "family_contracts": {
+    "history_depth": {
+      "cell_ids": ["H00", "H01", "H02", "H03", "H04", "H05", "H06", "H07", "H08"],
+      "direction": "b2h",
+      "publisher_side": "board",
+      "subscriber_side": "host",
+      "required_configuration_fields": ["burst_size", "depth", "loss_pct"],
+      "startup_order": "host_subscriber_then_board_reset",
+      "impairment_locus": "host_ingress_board_to_host_only",
+      "required_observations": ["burst_boundaries", "delivery_shape", "ingress_loss_efficacy", "resource_telemetry"],
+      "smoke_gates": ["HSM05_keep_last_suffix", "HSM20_complete_burst", "HSM20_ingress_loss5_efficacy"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    },
+    "durability": {
+      "cell_ids": ["D00", "D01", "D02", "D03", "D04", "D05", "D06", "D07"],
+      "direction": "b2h",
+      "publisher_side": "board",
+      "subscriber_side": "host",
+      "required_configuration_fields": ["cache_depth", "durability", "late_join_s"],
+      "startup_order": "board_publisher_then_bounded_host_late_join",
+      "impairment_locus": "none_clean",
+      "required_observations": ["pre_join_published", "late_join_timestamp", "cached_samples_received", "resource_telemetry"],
+      "smoke_gates": ["DSMV_no_prejoin_replay", "DSMTL_complete_prejoin_replay"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    },
+    "deadline": {
+      "cell_ids": ["DL00", "DL01", "DL02", "DL03", "DL04", "DL05", "DL06", "DL07", "DL08"],
+      "direction": "h2b",
+      "publisher_side": "host",
+      "subscriber_side": "board",
+      "required_configuration_fields": ["deadline_ms", "delay_ms", "publish_period_ms"],
+      "startup_order": "host_publisher_then_board_reset",
+      "impairment_locus": "host_egress_board_ingress_only",
+      "required_observations": ["deadline_counter_delta", "deadline_callback_count", "first_callback_offset", "delay_efficacy", "resource_telemetry"],
+      "smoke_gates": ["DL01_positive_event", "DL02_zero_event"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    },
+    "lifespan": {
+      "cell_ids": ["LS00", "LS01", "LS02", "LS03", "LS04", "LS05", "LS06", "LS07"],
+      "direction": "b2h",
+      "publisher_side": "board",
+      "subscriber_side": "host",
+      "required_configuration_fields": ["lifespan_ms", "release_delay_ms"],
+      "startup_order": "host_subscriber_then_board_reset",
+      "impairment_locus": "board_pre_transmit_release_hold",
+      "required_observations": ["sample_source_timestamp", "hold_start_end", "released_samples", "expired_samples", "resource_telemetry"],
+      "smoke_gates": ["LS01_disabled_full_delivery", "LS02_expired_zero_delivery"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    },
+    "liveliness": {
+      "cell_ids": ["LV00", "LV01", "LV02", "LV03", "LV04", "LV05", "LV06", "LV07"],
+      "direction": "h2b",
+      "publisher_side": "host",
+      "subscriber_side": "board",
+      "required_configuration_fields": ["lease_s", "outage_s"],
+      "startup_order": "discovery_then_bounded_host_egress_outage",
+      "impairment_locus": "host_egress_board_ingress_only_dynamic",
+      "required_observations": ["outage_start_end", "liveliness_counter_delta", "liveliness_callback_count", "recovery_timestamp", "resource_telemetry"],
+      "smoke_gates": ["LVSM_SHORT_no_transition", "LVSM_LONG_lost_recovered"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    },
+    "resource_limits": {
+      "cell_ids": ["R00", "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08"],
+      "direction": "b2h",
+      "publisher_side": "board",
+      "subscriber_side": "host",
+      "required_configuration_fields": ["max_samples", "payload_bytes", "publish_rate_hz"],
+      "startup_order": "host_subscriber_then_board_reset_then_ack_suppression",
+      "impairment_locus": "host_egress_ack_suppression_only",
+      "required_observations": ["ack_suppression_start_end", "accepted_publish_count", "rejected_publish_count", "history_occupancy", "resource_telemetry"],
+      "smoke_gates": ["R00_within_capacity_full_delivery", "R01_one_over_capacity_saturation_recovery", "R01_external_ack_suppression_efficacy"],
+      "implementation_state": "smoke_gate_passed_formal_blocked",
+      "formal_launch_allowed": false
+    }
+  }
+}

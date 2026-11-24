@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "status": "draft_no_data",
+  "drafted": "2026-07-16",
+  "reporting": "cases_passed_over_total_with_exact_failure_traces",
+  "performance_pooling_forbidden": true,
+  "compatibility_matrices": [
+    {
+      "id": "CMP-REL",
+      "policy": "reliability",
+      "directions": ["b2h", "h2b"],
+      "endpoint_creation_orders": ["remote_first", "local_first"],
+      "pairs": [
+        {"offered": "best_effort", "requested": "best_effort", "expected_match": true},
+        {"offered": "reliable", "requested": "best_effort", "expected_match": true},
+        {"offered": "best_effort", "requested": "reliable", "expected_match": false},
+        {"offered": "reliable", "requested": "reliable", "expected_match": true}
+      ],
+      "expected_expanded_cases": 16
+    },
+    {
+      "id": "CMP-DUR",
+      "policy": "durability",
+      "directions": ["b2h", "h2b"],
+      "endpoint_creation_orders": ["remote_first", "local_first"],
+      "pairs": [
+        {"offered": "volatile", "requested": "volatile", "expected_match": true},
+        {"offered": "transient_local", "requested": "volatile", "expected_match": true},
+        {"offered": "volatile", "requested": "transient_local", "expected_match": false},
+        {"offered": "transient_local", "requested": "transient_local", "expected_match": true}
+      ],
+      "expected_expanded_cases": 16
+    },
+    {
+      "id": "CMP-DL",
+      "policy": "deadline",
+      "directions": ["b2h", "h2b"],
+      "endpoint_creation_orders": ["remote_first", "local_first"],
+      "pairs": [
+        {"offered_ms": 50, "requested_ms": 100, "expected_match": true},
+        {"offered_ms": 100, "requested_ms": 50, "expected_match": false}
+      ],
+      "expected_expanded_cases": 8
+    },
+    {
+      "id": "CMP-LV",
+      "policy": "liveliness",
+      "directions": ["b2h", "h2b"],
+      "endpoint_creation_orders": ["remote_first", "local_first"],
+      "kind": "automatic",
+      "pairs": [
+        {"offered_lease_ms": 500, "requested_lease_ms": 2000, "expected_match": true},
+        {"offered_lease_ms": 2000, "requested_lease_ms": 500, "expected_match": false}
+      ],
+      "expected_expanded_cases": 8
+    }
+  ],
+  "mechanism_cases": [
+    {"id": "HIST-KL-ORDER", "policy": "history_depth", "level": "unit_and_hardware", "expected": "KEEP_LAST retains and replays exactly the newest depth samples in sequence order"},
+    {"id": "HIST-KA-BOUND", "policy": "history_depth", "level": "unit_and_hardware", "expected": "KEEP_ALL accepts through capacity and rejects the next sample without eviction"},
+    {"id": "HIST-DUP-ONCE", "policy": "history_depth", "level": "unit_and_hardware", "expected": "duplicate sequence numbers reach the application at most once"},
+    {"id": "HIST-GAP-SAFE", "policy": "history_depth", "level": "unit_and_hardware", "expected": "gaps and repair requests never read outside retained history"},
+    {"id": "HIST-EPOCH-RESET", "policy": "history_depth", "level": "hardware", "expected": "a participant reset does not reuse or deliver stale pre-reset history"},
+    {"id": "HIST-PBUF-RELEASE", "policy": "history_depth", "level": "unit_and_hardware", "expected": "acknowledged or evicted slots release pbuf ownership immediately and heap recovers"},
+
+    {"id": "DUR-VOL-LATE", "policy": "durability", "level": "hardware", "expected": "a late Volatile reader receives zero pre-join samples"},
+    {"id": "DUR-TL-ORDER", "policy": "durability", "level": "unit_and_hardware", "expected": "a late Transient Local reader receives each eligible cached sample once in order"},
+    {"id": "DUR-TL-DEPTH", "policy": "durability", "level": "hardware", "expected": "replay contains no more than the configured depth and contains the newest eligible samples"},
+    {"id": "DUR-TL-EPOCH", "policy": "durability", "level": "hardware", "expected": "restarted writers never replay samples from the previous participant epoch"},
+    {"id": "DUR-FRAG-CAPABILITY", "policy": "durability", "level": "unit_and_hardware", "expected": "fragmented replay either passes exact reconstruction or remains explicitly unsupported and excluded"},
+
+    {"id": "DL-DISABLED", "policy": "deadline", "level": "unit_and_hardware", "expected": "an infinite Deadline emits no miss event"},
+    {"id": "DL-BEFORE", "policy": "deadline", "level": "unit", "expected": "no miss is emitted before the configured boundary"},
+    {"id": "DL-BOUNDARY", "policy": "deadline", "level": "unit_and_hardware", "expected": "the frozen timer-resolution rule emits the first miss at the specified boundary"},
+    {"id": "DL-REPEATED", "policy": "deadline", "level": "unit_and_hardware", "expected": "multiple elapsed periods increment the exact missed-period count without duplicate callbacks"},
+    {"id": "DL-RECOVERY", "policy": "deadline", "level": "hardware", "expected": "a timely sample resets the next deadline and later misses use the new baseline"},
+    {"id": "DL-POLLING", "policy": "deadline", "level": "hardware", "expected": "recorded event latency is bounded by deadline plus the frozen polling tolerance"},
+
+    {"id": "LS-DISABLED", "policy": "lifespan", "level": "unit_and_hardware", "expected": "an infinite Lifespan never expires a sample"},
+    {"id": "LS-FRESH", "policy": "lifespan", "level": "unit_and_hardware", "expected": "a sample younger than Lifespan is transmitted exactly once"},
+    {"id": "LS-EXPIRED", "policy": "lifespan", "level": "unit_and_hardware", "expected": "a sample older than Lifespan is not transmitted and increments the expiry counter once"},
+    {"id": "LS-BOUNDARY", "policy": "lifespan", "level": "unit", "expected": "the exact equality boundary follows the preregistered timer-resolution rule"},
+    {"id": "LS-RECONNECT", "policy": "lifespan", "level": "hardware", "expected": "expired history is not delivered after reader reconnect"},
+    {"id": "LS-HOLD-MARKERS", "policy": "lifespan", "level": "hardware", "expected": "board release-hold start and end timestamps reconcile with the injected delay"},
+
+    {"id": "LV-STARTUP", "policy": "liveliness", "level": "unit_and_hardware", "expected": "no false loss occurs before match and the first valid heartbeat"},
+    {"id": "LV-BEFORE", "policy": "liveliness", "level": "unit", "expected": "no loss occurs before the lease boundary"},
+    {"id": "LV-LOSS-ONCE", "policy": "liveliness", "level": "unit_and_hardware", "expected": "crossing the lease emits one lost transition"},
+    {"id": "LV-NO-DUP", "policy": "liveliness", "level": "unit_and_hardware", "expected": "repeated checks during one outage do not emit duplicate lost transitions"},
+    {"id": "LV-RECOVERY-ONCE", "policy": "liveliness", "level": "unit_and_hardware", "expected": "the first valid post-outage heartbeat emits one recovered transition"},
+    {"id": "LV-INFINITE", "policy": "liveliness", "level": "unit_and_hardware", "expected": "an infinite lease emits neither lost nor recovered transitions"},
+
+    {"id": "RES-SAMPLE-BOUND", "policy": "resource_limits", "level": "unit_and_hardware", "expected": "exactly max_samples outstanding changes are accepted"},
+    {"id": "RES-SAMPLE-REJECT", "policy": "resource_limits", "level": "unit_and_hardware", "expected": "the next outstanding sample is rejected and increments the reject counter once"},
+    {"id": "RES-BYTE-BOUND", "policy": "resource_limits", "level": "unit_and_hardware", "expected": "max_bytes accepts the exact boundary and rejects the first excess byte"},
+    {"id": "RES-HISTORY-ORDER", "policy": "resource_limits", "level": "unit", "expected": "KEEP_ALL rejects at the limit while KEEP_LAST eviction remains separately defined"},
+    {"id": "RES-ALLOC-FAIL", "policy": "resource_limits", "level": "unit_and_hardware", "expected": "allocation failure is counted and never reported as successful publication"},
+    {"id": "RES-RECOVERY", "policy": "resource_limits", "level": "hardware", "expected": "publishing resumes after acknowledgments free history"},
+    {"id": "RES-NO-CORRUPTION", "policy": "resource_limits", "level": "unit_and_hardware", "expected": "pressure and rejection preserve cache invariants and stack guards"}
+  ],
+  "expected_expanded_compatibility_cases": 48,
+  "expected_mechanism_cases": 36,
+  "expected_total_cases": 84
+}

@@ -1,0 +1,48 @@
+# Doxyfile for mROS2-QoS Industrial Documentation
+
+PROJECT_NAME           = "mROS2-QoS"
+PROJECT_NUMBER         = "1.0"
+PROJECT_BRIEF          = "Industrial-Grade QoS Implementation for mROS2 on ESP32"
+
+OUTPUT_DIRECTORY       = build/docs
+CREATE_SUBDIRS         = NO
+
+INPUT                  = mros2/include \
+                         mros2/src \
+                         mros2/embeddedRTPS/include \
+                         platform \
+                         README.md \
+                         docs
+
+FILE_PATTERNS          = *.h *.hpp *.cpp *.c *.md
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */build/* */archive/* */results/* */.git/*
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
