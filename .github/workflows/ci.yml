@@ -18,6 +18,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y g++
 
+      - name: Install Python packages used by the harness tests
+        run: python3 -m pip install --quiet numpy scipy pandas matplotlib pyserial
+
       - name: Run host-side unit tests
         run: ./scripts/test/run_host_tests.sh
 
