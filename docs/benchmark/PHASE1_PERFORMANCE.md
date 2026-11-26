@@ -1,56 +1,41 @@
-# Phase 1 性能基准报告
+# Phase 1 Performance Baseline
 
-**日期:** 2026-06-14  
-**平台:** ESP32-S3  
-**固件:** step7_full_qos (RELIABLE + VOLATILE + KEEP_LAST(5))
+**Date:** 2026-06-14
+**Platform:** ESP32-S3
+**Firmware:** step7_full_qos (RELIABLE + VOLATILE + KEEP_LAST(5))
 
----
+## Results
 
-## 测试结果
-
-| 指标 | 值 |
-|------|-----|
-| TX 吞吐量 | 21.1 msg/s |
-| RTT 延迟 (Min) | 15.0 ms |
-| RTT 延迟 (Avg) | 21.9 ms |
-| RTT 延迟 (Max) | 37.2 ms |
-| 延迟采样数 | 40 |
-| 可用内存 | 202,652 bytes (76.8% of 264KB DRAM) |
+| Metric | Value |
+|--------|-------|
+| TX throughput | 21.1 msg/s |
+| RTT (min) | 15.0 ms |
+| RTT (avg) | 21.9 ms |
+| RTT (max) | 37.2 ms |
+| RTT samples | 40 |
+| Free heap | 202,652 bytes (76.8% of 264 KB DRAM) |
 | History cache | 5/5 samples, 180 bytes |
-| TX 消息总数 | 40 |
-| RX 消息总数 | 40 |
-| 丢包率 | 0% |
+| Messages sent | 40 |
+| Messages received | 40 |
+| Loss | 0% |
 
----
+## QoS behavior checks
 
-## QoS 行为验证
+| QoS policy | Result |
+|------------|--------|
+| RELIABLE (both directions) | PASS |
+| VOLATILE | PASS |
+| KEEP_LAST(5) | PASS (cache held at 5/5) |
+| Deadline (100 ms) | PASS (missed=1, detected) |
+| Lifespan (2000 ms) | PASS (expired/fresh check) |
+| Liveliness (AUTOMATIC) | PASS |
+| Resource Limits | PASS (30 samples, 30 rejected) |
 
-| QoS 策略 | 结果 |
-|-----------|------|
-| RELIABLE (双向) | ✅ PASS |
-| VOLATILE | ✅ PASS |
-| KEEP_LAST(5) | ✅ PASS (5/5 cache enforced) |
-| Deadline (100ms) | ✅ PASS (missed=1, 正确检测) |
-| Lifespan (2000ms) | ✅ PASS (expired/fresh check) |
-| Liveliness (AUTOMATIC) | ✅ PASS |
-| Resource Limits | ✅ PASS (30 samples, 30 rejected) |
-
----
-
-## 资源消耗
+## Memory
 
 ```
-DRAM 总量:     264 KB
-可用内存:      202 KB (76.8%)
-已用内存:      ~62 KB
-RTPS 缓存:     180 bytes (5 samples)
+DRAM total:     264 KB
+Free heap:      202 KB (76.8%)
+Used:           ~62 KB
+RTPS cache:     180 bytes (5 samples)
 ```
-
----
-
-## 基准数据用途
-
-这些数据作为 Phase 2 (KAN 自适应 QoS) 的 baseline：
-- 动态网络下的吞吐量对比
-- 延迟优化目标
-- 内存预算约束

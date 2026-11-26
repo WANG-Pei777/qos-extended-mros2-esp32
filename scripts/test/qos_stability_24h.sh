@@ -211,9 +211,9 @@ generate_report() {
             echo "  Memory drift: ${MEM_DRIFT} bytes ($(echo "scale=2; ${MEM_DRIFT} * 100 / ${FIRST_MEM}" | bc)%)"
 
             if [ ${MEM_DRIFT#-} -lt 1024 ]; then
-                echo "  ✅ Memory stable (drift < 1KB)"
+                echo "  [OK] Memory stable (drift < 1KB)"
             else
-                echo "  ⚠️  Significant memory drift detected!"
+                echo "  [WARN]  Significant memory drift detected!"
             fi
         fi
         echo ""
@@ -239,21 +239,21 @@ generate_report() {
             echo "  Warnings: ${WARN_COUNT}"
 
             if [ ${ERROR_COUNT} -eq 0 ] && [ ${FAIL_COUNT} -eq 0 ]; then
-                echo "  ✅ No errors detected"
+                echo "  [OK] No errors detected"
             else
-                echo "  ❌ Errors detected - review logs"
+                echo "  [FAIL] Errors detected - review logs"
             fi
         fi
         echo ""
 
         echo "Conclusion:"
         if [ ${MEM_DRIFT#-} -lt 1024 ] && [ ${ERROR_COUNT:-0} -eq 0 ]; then
-            echo "  ✅ STABILITY TEST PASSED"
+            echo "  [OK] STABILITY TEST PASSED"
             echo "     - Memory stable over ${DURATION_HOURS} hours"
             echo "     - No errors detected"
             echo "     - System ready for production deployment"
         else
-            echo "  ⚠️  STABILITY TEST COMPLETED WITH ISSUES"
+            echo "  [WARN]  STABILITY TEST COMPLETED WITH ISSUES"
             echo "     - Review logs for details"
             echo "     - Additional investigation recommended"
         fi

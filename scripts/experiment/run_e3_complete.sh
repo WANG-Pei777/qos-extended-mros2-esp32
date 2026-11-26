@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
 # E3 Complete: Pre-fix + Post-fix comparison
-# Per EXPERIMENT_REMEDIATION_GUIDE §3.③
 #
 set -eo pipefail
 
@@ -37,5 +36,5 @@ echo "  # Run post-fix test (30 resets)"
 echo "  bash scripts/experiment/run_matrix.sh mros2qos reset_storm_postfix 30"
 echo ""
 echo "Expected outcome:"
-echo "  - prefix: ~20-30% failures (卡死)"
+echo "  - prefix: ~20-30% failures (hang)"
 echo "  - postfix: ~100% success, shorter wait times"

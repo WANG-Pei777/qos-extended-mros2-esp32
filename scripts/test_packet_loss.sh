@@ -39,16 +39,16 @@ echo ""
 echo "[4/5] Checking results..."
 if [ -n "$RESULT_DIR" ] && [ -f "$RESULT_DIR/attempt_1_summary.log" ]; then
     if grep -q "RESULT: PASS" "$RESULT_DIR/attempt_1_summary.log"; then
-        echo "  ✅ PASS: All QoS tests passed with ${LOSS_RATE}% packet loss"
+        echo "  [OK] PASS: All QoS tests passed with ${LOSS_RATE}% packet loss"
     else
-        echo "  ❌ FAIL: Some QoS tests failed with ${LOSS_RATE}% packet loss"
+        echo "  [FAIL] FAIL: Some QoS tests failed with ${LOSS_RATE}% packet loss"
     fi
 
     # Check for packet drops
     DROPS=$(grep "Packets Dropped:" "$RESULT_DIR/attempt_1_serial.log" 2>/dev/null | tail -1)
     echo "  $DROPS"
 else
-    echo "  ⚠️ Could not find validation results"
+    echo "  [WARN] Could not find validation results"
 fi
 
 # Step 5: Remove packet loss

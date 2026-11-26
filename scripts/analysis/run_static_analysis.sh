@@ -50,13 +50,13 @@ if command -v cppcheck &> /dev/null; then
     TOTAL_ISSUES=$((TOTAL_ISSUES + ISSUES))
 
     if [ "$ISSUES" -eq 0 ]; then
-        echo -e "${GREEN}✓ cppcheck: CLEAN${NC}"
+        echo -e "${GREEN}[OK] cppcheck: CLEAN${NC}"
     else
-        echo -e "${RED}✗ cppcheck: ${ISSUES} issues found${NC}"
+        echo -e "${RED}[FAIL] cppcheck: ${ISSUES} issues found${NC}"
         FAILED_TOOLS=$((FAILED_TOOLS + 1))
     fi
 else
-    echo -e "${YELLOW}⚠ cppcheck not found, skipping${NC}"
+    echo -e "${YELLOW}[WARN] cppcheck not found, skipping${NC}"
 fi
 
 echo ""
@@ -82,12 +82,12 @@ if command -v clang-tidy &> /dev/null; then
     TOTAL_ISSUES=$((TOTAL_ISSUES + ISSUES))
 
     if [ "$ISSUES" -eq 0 ]; then
-        echo -e "${GREEN}✓ clang-tidy: CLEAN${NC}"
+        echo -e "${GREEN}[OK] clang-tidy: CLEAN${NC}"
     else
-        echo -e "${YELLOW}⚠ clang-tidy: ${ISSUES} issues found${NC}"
+        echo -e "${YELLOW}[WARN] clang-tidy: ${ISSUES} issues found${NC}"
     fi
 else
-    echo -e "${YELLOW}⚠ clang-tidy not found, skipping${NC}"
+    echo -e "${YELLOW}[WARN] clang-tidy not found, skipping${NC}"
 fi
 
 echo ""
@@ -128,7 +128,7 @@ METRICS_REPORT="${REPORT_DIR}/metrics_${TIMESTAMP}.txt"
 
 } | tee "${METRICS_REPORT}"
 
-echo -e "${GREEN}✓ Metrics report saved${NC}"
+echo -e "${GREEN}[OK] Metrics report saved${NC}"
 echo ""
 
 # ==========================================
@@ -151,9 +151,9 @@ SECURITY_REPORT="${REPORT_DIR}/security_${TIMESTAMP}.txt"
         --include="*.cpp" --include="*.c" --include="*.h" 2>/dev/null || true)
 
     if [ -z "$UNSAFE" ]; then
-        echo "✓ No unsafe functions found"
+        echo "[OK] No unsafe functions found"
     else
-        echo "⚠ Unsafe functions detected:"
+        echo "[WARN] Unsafe functions detected:"
         echo "$UNSAFE"
         TOTAL_ISSUES=$((TOTAL_ISSUES + $(echo "$UNSAFE" | wc -l)))
     fi
@@ -166,14 +166,14 @@ SECURITY_REPORT="${REPORT_DIR}/security_${TIMESTAMP}.txt"
     echo "delete count: $DELETE_COUNT"
 
     if [ "$NEW_COUNT" -gt "$DELETE_COUNT" ]; then
-        echo "⚠ Potential memory leak: new > delete"
+        echo "[WARN] Potential memory leak: new > delete"
     fi
 
     echo ""
     echo "--- Volatile Variables (should use atomic) ---"
     grep -rn "volatile.*bool\|volatile.*int" \
         "${PROJECT_ROOT}/mros2/" \
-        --include="*.cpp" --include="*.h" || echo "✓ No volatile variables"
+        --include="*.cpp" --include="*.h" || echo "[OK] No volatile variables"
 
 } | tee "${SECURITY_REPORT}"
 
@@ -194,10 +194,10 @@ echo "security:      ${SECURITY_REPORT}"
 echo ""
 
 if [ "$TOTAL_ISSUES" -eq 0 ]; then
-    echo -e "${GREEN}✓✓✓ ALL CHECKS PASSED ✓✓✓${NC}"
+    echo -e "${GREEN}[OK][OK][OK] ALL CHECKS PASSED [OK][OK][OK]${NC}"
     exit 0
 else
-    echo -e "${YELLOW}⚠ Total issues found: ${TOTAL_ISSUES}${NC}"
+    echo -e "${YELLOW}[WARN] Total issues found: ${TOTAL_ISSUES}${NC}"
     echo "Review reports for details."
     exit 1
 fi

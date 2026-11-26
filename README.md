@@ -68,7 +68,7 @@ scripts/experiment/        campaign runners, netem loss injection, audits, analy
 scripts/validation/        flashing, preflight, WSL firewall helpers
 scripts/test/              host-side test runner
 tests/                     host unit tests (C++) and harness tests (Python)
-docs/                      protocols, runbooks, QoS status, figures, old working notes
+docs/                      protocols, runbooks, QoS status, figures
 ```
 
 `docs/DESIGN_MAP.md` says which file implements which mechanism and which

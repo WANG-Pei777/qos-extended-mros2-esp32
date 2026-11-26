@@ -46,10 +46,10 @@ for param in "${PARAMS[@]}"; do
 
     if [ ${EXIT_CODE} -eq 0 ]; then
         echo ""
-        echo "[✓] ${param} sweep COMPLETED in $((PARAM_ELAPSED / 3600))h $((PARAM_ELAPSED % 3600 / 60))m"
+        echo "[[OK]] ${param} sweep COMPLETED in $((PARAM_ELAPSED / 3600))h $((PARAM_ELAPSED % 3600 / 60))m"
     else
         echo ""
-        echo "[✗] ${param} sweep FAILED with exit code ${EXIT_CODE}"
+        echo "[[FAIL]] ${param} sweep FAILED with exit code ${EXIT_CODE}"
         echo "    Continuing with next parameter..."
     fi
 

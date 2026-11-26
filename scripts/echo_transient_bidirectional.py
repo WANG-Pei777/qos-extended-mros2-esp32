@@ -77,9 +77,9 @@ class TransientLocalBidirectional(Node):
             self.get_logger().info(f'  Cached RX: {self.cached_count}')
             self.get_logger().info(f'  Post-match RX: {self.post_match_count}')
             if self.cached_count >= 8:
-                self.get_logger().info('  ✅ Received all cached messages from ESP32!')
+                self.get_logger().info('  [OK] Received all cached messages from ESP32!')
             else:
-                self.get_logger().warn(f'  ⚠️  Only received {self.cached_count}/8 cached messages')
+                self.get_logger().warn(f'  [WARN]  Only received {self.cached_count}/8 cached messages')
 
 
 def main():

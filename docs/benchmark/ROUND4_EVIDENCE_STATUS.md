@@ -157,7 +157,7 @@ without a measured delivery advantage, and the effect differed from the
 host-to-board impairment result. This is a testbed observation, not a general
 DDS reliability theorem.
 
-## Historical Remaining Gaps Before A Top-Tier Submission
+## Historical Remaining Gaps Before Submission
 
 This list was written before the 2026-07-15 P4, Round 6, and three-system
 closures above. Items 3, 4, and 6 are now addressed; item 5 remains optional

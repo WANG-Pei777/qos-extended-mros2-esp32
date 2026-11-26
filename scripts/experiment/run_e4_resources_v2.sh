@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
 # E4: Resource Occupancy (Fixed - Three Systems)
-# Per EXPERIMENT_REMEDIATION_GUIDE §3.⑤
 #
 set -eo pipefail
 
@@ -52,7 +51,7 @@ if [ -d ~/upstream_bench/mros2-esp32/workspace/echoreply_string ]; then
     echo "  Note: Heap measurement requires flashing and running (deferred)"
     echo "upstream,${FLASH_SIZE},0,0,upstream_baseline" >> "${OUTPUT_CSV}"
 else
-    echo "  ⚠️  upstream_bench not found, skipping"
+    echo "  [WARN]  upstream_bench not found, skipping"
 fi
 
 # === micro-ROS ===
@@ -63,7 +62,7 @@ if [ -d ~/microros_bench ]; then
     echo "  Flash/Heap measurement requires manual inspection (deferred)"
     echo "microros,0,0,0,microros_baseline" >> "${OUTPUT_CSV}"
 else
-    echo "  ⚠️  microros_bench not found, skipping"
+    echo "  [WARN]  microros_bench not found, skipping"
 fi
 
 echo ""

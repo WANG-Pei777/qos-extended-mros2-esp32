@@ -214,17 +214,17 @@ extern "C" void app_main(void)
   MROS2_INFO("  QoS COMBINATION TEST RESULTS");
   MROS2_INFO("============================================");
   MROS2_INFO("Test 1 (BE + TL): 5 messages published");
-  MROS2_INFO("  ✅ Validates sensor data caching use case");
+  MROS2_INFO("  [OK] Validates sensor data caching use case");
   MROS2_INFO("");
   MROS2_INFO("Test 2 (REL + KEEPALL): %u accepted, %u rejected", accepted, rejected);
-  MROS2_INFO("  ✅ Validates command history use case");
+  MROS2_INFO("  [OK] Validates command history use case");
   MROS2_INFO("");
   MROS2_INFO("Test 3 (TL + KEEPALL): %u accepted, %u rejected", accepted, rejected);
-  MROS2_INFO("  ✅ Validates persistent queue use case");
+  MROS2_INFO("  [OK] Validates persistent queue use case");
   MROS2_INFO("");
   MROS2_INFO("Memory: %u bytes free", esp_get_free_heap_size());
   MROS2_INFO("============================================");
-  MROS2_INFO("\n✅ ALL COMBINATION TESTS COMPLETED");
+  MROS2_INFO("\n[OK] ALL COMBINATION TESTS COMPLETED");
   MROS2_INFO("   QoS policies can be safely combined");
 
   MROS2_INFO("\nEntering idle spin.");

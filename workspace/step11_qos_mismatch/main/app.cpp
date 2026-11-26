@@ -1,10 +1,10 @@
 /* mROS2 Step 11: QoS Mismatch Testing
  *
  * Tests DDS QoS compatibility rules:
- * 1. RELIABLE pub + BEST_EFFORT sub → should match ✅
- * 2. BEST_EFFORT pub + RELIABLE sub → should reject ❌
- * 3. VOLATILE pub + TRANSIENT_LOCAL sub → should match ⚠️
- * 4. TRANSIENT_LOCAL pub + VOLATILE sub → should match (no cache) ⚠️
+ * 1. RELIABLE pub + BEST_EFFORT sub → should match [OK]
+ * 2. BEST_EFFORT pub + RELIABLE sub → should reject [FAIL]
+ * 3. VOLATILE pub + TRANSIENT_LOCAL sub → should match [WARN]
+ * 4. TRANSIENT_LOCAL pub + VOLATILE sub → should match (no cache) [WARN]
  *
  * This firmware tests ESP32 as both publisher and subscriber with various
  * QoS combinations to verify DDS compatibility rules.
@@ -168,7 +168,7 @@ static void run_test(const char* test_name,
   test_results[test_index].passed = test_passed;
 
   MROS2_INFO("----------------------------------------");
-  MROS2_INFO("Test Result: %s", test_passed ? "PASS ✅" : "FAIL ❌");
+  MROS2_INFO("Test Result: %s", test_passed ? "PASS [OK]" : "FAIL [FAIL]");
   MROS2_INFO("  TX: %u, RX: %u", tx_count, rx_count);
   MROS2_INFO("========================================\n");
 
@@ -205,7 +205,7 @@ extern "C" void app_main(void)
 
   delay_ms(3000);
 
-  /* Test 1: RELIABLE pub + BEST_EFFORT sub → should MATCH ✅ */
+  /* Test 1: RELIABLE pub + BEST_EFFORT sub → should MATCH [OK] */
   mros2::QoSProfile test1_pub_qos;
   test1_pub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
   test1_pub_qos.durability = rtps::DurabilityKind_t::VOLATILE;
@@ -222,7 +222,7 @@ extern "C" void app_main(void)
            node, "/test1_pub", "/test1_sub",
            test1_pub_qos, test1_sub_qos, true, 3000);
 
-  /* Test 2: BEST_EFFORT pub + RELIABLE sub → should REJECT ❌ */
+  /* Test 2: BEST_EFFORT pub + RELIABLE sub → should REJECT [FAIL] */
   mros2::QoSProfile test2_pub_qos;
   test2_pub_qos.reliability = rtps::ReliabilityKind_t::BEST_EFFORT;
   test2_pub_qos.durability = rtps::DurabilityKind_t::VOLATILE;
@@ -239,7 +239,7 @@ extern "C" void app_main(void)
            node, "/test2_pub", "/test2_sub",
            test2_pub_qos, test2_sub_qos, false, 3000);
 
-  /* Test 3: VOLATILE pub + TRANSIENT_LOCAL sub → should MATCH (degraded) ⚠️ */
+  /* Test 3: VOLATILE pub + TRANSIENT_LOCAL sub → should MATCH (degraded) [WARN] */
   mros2::QoSProfile test3_pub_qos;
   test3_pub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
   test3_pub_qos.durability = rtps::DurabilityKind_t::VOLATILE;
@@ -256,7 +256,7 @@ extern "C" void app_main(void)
            node, "/test3_pub", "/test3_sub",
            test3_pub_qos, test3_sub_qos, true, 3000);
 
-  /* Test 4: TRANSIENT_LOCAL pub + VOLATILE sub → should MATCH (no cache) ⚠️ */
+  /* Test 4: TRANSIENT_LOCAL pub + VOLATILE sub → should MATCH (no cache) [WARN] */
   mros2::QoSProfile test4_pub_qos;
   test4_pub_qos.reliability = rtps::ReliabilityKind_t::RELIABLE;
   test4_pub_qos.durability = rtps::DurabilityKind_t::TRANSIENT_LOCAL;
@@ -289,7 +289,7 @@ extern "C" void app_main(void)
     MROS2_INFO("  TX: %u, RX: %u",
                test_results[i].messages_sent,
                test_results[i].messages_received);
-    MROS2_INFO("  Result: %s", test_results[i].passed ? "PASS ✅" : "FAIL ❌");
+    MROS2_INFO("  Result: %s", test_results[i].passed ? "PASS [OK]" : "FAIL [FAIL]");
     MROS2_INFO("");
 
     if (test_results[i].passed) {
@@ -306,10 +306,10 @@ extern "C" void app_main(void)
   MROS2_INFO("============================================");
 
   if (failed == 0) {
-    MROS2_INFO("\n✅ ALL QoS MISMATCH TESTS PASSED!");
+    MROS2_INFO("\n[OK] ALL QoS MISMATCH TESTS PASSED!");
     MROS2_INFO("   DDS compatibility rules correctly implemented.");
   } else {
-    MROS2_ERROR("\n❌ %u QoS MISMATCH TESTS FAILED!", failed);
+    MROS2_ERROR("\n[FAIL] %u QoS MISMATCH TESTS FAILED!", failed);
     MROS2_ERROR("   DDS compatibility rules may not be correct.");
   }
 

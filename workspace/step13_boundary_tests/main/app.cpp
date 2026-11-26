@@ -132,9 +132,9 @@ extern "C" void app_main(void)
   }
 
   if (mros2::publisher_history_count() <= 1) {
-    MROS2_INFO("  ✅ Cache correctly limited to 1 sample");
+    MROS2_INFO("  [OK] Cache correctly limited to 1 sample");
   } else {
-    MROS2_ERROR("  ❌ Cache exceeded depth=1 limit!");
+    MROS2_ERROR("  [FAIL] Cache exceeded depth=1 limit!");
   }
   delay_ms(2000);
 
@@ -168,9 +168,9 @@ extern "C" void app_main(void)
 
   MROS2_INFO("  Deadline misses: %u", missed_count);
   if (missed_count > 0) {
-    MROS2_INFO("  ✅ Deadline correctly detected misses");
+    MROS2_INFO("  [OK] Deadline correctly detected misses");
   } else {
-    MROS2_WARN("  ⚠️  No deadline misses detected (expected some)");
+    MROS2_WARN("  [WARN]  No deadline misses detected (expected some)");
   }
   delay_ms(2000);
 
@@ -206,7 +206,7 @@ extern "C" void app_main(void)
 
   MROS2_INFO("  Lifespan drops: %u", dropped_count);
   if (dropped_count >= 0) {
-    MROS2_INFO("  ✅ Lifespan expiry detected");
+    MROS2_INFO("  [OK] Lifespan expiry detected");
   }
   delay_ms(2000);
 
@@ -238,7 +238,7 @@ extern "C" void app_main(void)
   int32_t mem_used = mem_before - mem_after;
 
   MROS2_INFO("  Memory used: %d bytes", mem_used);
-  MROS2_INFO("  ✅ Large messages handled");
+  MROS2_INFO("  [OK] Large messages handled");
   delay_ms(2000);
 
   /* Test 5: High Frequency */
@@ -272,21 +272,21 @@ extern "C" void app_main(void)
 
   MROS2_INFO("  Published %u messages in %llu ms", msg_count, duration_us / 1000);
   MROS2_INFO("  Throughput: %.1f msg/s", throughput);
-  MROS2_INFO("  ✅ High-frequency publishing handled");
+  MROS2_INFO("  [OK] High-frequency publishing handled");
 
   /* Final Report */
   MROS2_INFO("\n============================================");
   MROS2_INFO("  BOUNDARY CONDITION TEST RESULTS");
   MROS2_INFO("============================================");
-  MROS2_INFO("Test 1 (KEEP_LAST(1)): ✅ Minimum cache working");
-  MROS2_INFO("Test 2 (Deadline 10ms): ✅ %u misses detected", missed_count);
-  MROS2_INFO("Test 3 (Lifespan 100ms): ✅ %u drops detected", dropped_count);
-  MROS2_INFO("Test 4 (Large msgs): ✅ 512-byte messages handled");
-  MROS2_INFO("Test 5 (High freq): ✅ %.1f msg/s achieved", throughput);
+  MROS2_INFO("Test 1 (KEEP_LAST(1)): [OK] Minimum cache working");
+  MROS2_INFO("Test 2 (Deadline 10ms): [OK] %u misses detected", missed_count);
+  MROS2_INFO("Test 3 (Lifespan 100ms): [OK] %u drops detected", dropped_count);
+  MROS2_INFO("Test 4 (Large msgs): [OK] 512-byte messages handled");
+  MROS2_INFO("Test 5 (High freq): [OK] %.1f msg/s achieved", throughput);
   MROS2_INFO("");
   MROS2_INFO("Memory: %u bytes free", esp_get_free_heap_size());
   MROS2_INFO("============================================");
-  MROS2_INFO("\n✅ ALL BOUNDARY TESTS COMPLETED");
+  MROS2_INFO("\n[OK] ALL BOUNDARY TESTS COMPLETED");
   MROS2_INFO("   System handles edge cases correctly");
 
   MROS2_INFO("\nEntering idle spin.");

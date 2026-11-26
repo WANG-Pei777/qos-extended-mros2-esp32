@@ -134,27 +134,27 @@ PASS_COUNT=0
 FAIL_COUNT=0
 
 if awk "BEGIN {exit !($MSG_PER_SEC > 30)}"; then
-    echo "✓ Throughput: PASS"
+    echo "[OK] Throughput: PASS"
     PASS_COUNT=$((PASS_COUNT + 1))
 else
-    echo "✗ Throughput: BELOW TARGET"
+    echo "[FAIL] Throughput: BELOW TARGET"
     FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 LATENCY_NUM=$(echo "${LATENCY}" | sed 's/ms//')
 if awk "BEGIN {exit !($LATENCY_NUM < 15)}"; then
-    echo "✓ Latency: PASS"
+    echo "[OK] Latency: PASS"
     PASS_COUNT=$((PASS_COUNT + 1))
 else
-    echo "✗ Latency: ABOVE TARGET"
+    echo "[FAIL] Latency: ABOVE TARGET"
     FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 if [ "$FREE_MEMORY" -gt 225280 ]; then
-    echo "✓ Memory: PASS"
+    echo "[OK] Memory: PASS"
     PASS_COUNT=$((PASS_COUNT + 1))
 else
-    echo "✗ Memory: BELOW TARGET"
+    echo "[FAIL] Memory: BELOW TARGET"
     FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 

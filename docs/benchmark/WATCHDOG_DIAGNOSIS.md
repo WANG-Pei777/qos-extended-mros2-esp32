@@ -8,7 +8,7 @@ root-cause finding or an instruction to change the formal firmware baseline.
 
 **Date**: 2026-07-09
 **Issue**: ReaderThread systematic deadlock after firmware reflash
-**Severity**: 🔴 CRITICAL - Blocks all experiments
+**Severity**: CRITICAL - Blocks all experiments
 
 ---
 

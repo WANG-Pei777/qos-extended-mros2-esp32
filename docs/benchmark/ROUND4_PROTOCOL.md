@@ -1,4 +1,4 @@
-# ROUND4 Top-Tier Evidence Protocol
+# ROUND4 Evidence Protocol
 
 ## Claim Boundary
 

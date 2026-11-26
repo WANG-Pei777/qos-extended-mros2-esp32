@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Echo host for upstream mros2-esp32
-Topic: /step10_best_effort (per EXPERIMENT_REMEDIATION_GUIDE §3.⑥)
+Topic: /step10_best_effort
 """
 import rclpy
 from rclpy.node import Node

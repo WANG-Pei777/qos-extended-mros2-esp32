@@ -116,9 +116,9 @@ REPORT_FILE="${RESULT_DIR}/stability_72h_${TIMESTAMP}_report.txt"
     echo ""
 
     if [ "$ERROR_COUNT" -eq 0 ]; then
-        echo "Status: ✓ PASS - No errors detected"
+        echo "Status: [OK] PASS - No errors detected"
     else
-        echo "Status: ✗ FAIL - ${ERROR_COUNT} errors detected"
+        echo "Status: [FAIL] FAIL - ${ERROR_COUNT} errors detected"
     fi
 
     echo ""
@@ -132,9 +132,9 @@ REPORT_FILE="${RESULT_DIR}/stability_72h_${TIMESTAMP}_report.txt"
     echo "  Difference:    ${MEM_DIFF} bytes"
 
     if [ "$MEM_DIFF" -lt -10240 ]; then
-        echo "  ⚠ Potential memory leak detected"
+        echo "  [WARN] Potential memory leak detected"
     else
-        echo "  ✓ No memory leak detected"
+        echo "  [OK] No memory leak detected"
     fi
 
     echo ""

@@ -185,16 +185,16 @@ extern "C" void app_main(void)
   bool sub_ok = (rx_count > 0);
 
   if (pub_ok && sub_ok) {
-    MROS2_INFO("\n✅ BIDIRECTIONAL KEEP_ALL TEST PASSED!");
+    MROS2_INFO("\n[OK] BIDIRECTIONAL KEEP_ALL TEST PASSED!");
     MROS2_INFO("   Both directions working correctly.");
     MROS2_INFO("   KEEP_ALL correctly rejected messages when cache full.");
   } else {
     if (!pub_ok) {
-      MROS2_ERROR("\n⚠️  KEEP_ALL publisher test inconclusive");
+      MROS2_ERROR("\n[WARN]  KEEP_ALL publisher test inconclusive");
       MROS2_ERROR("   Expected some rejections when cache full, got 0");
     }
     if (!sub_ok) {
-      MROS2_ERROR("\n❌ KEEP_ALL subscriber test failed");
+      MROS2_ERROR("\n[FAIL] KEEP_ALL subscriber test failed");
       MROS2_ERROR("   Expected messages from ROS2, got 0");
     }
   }

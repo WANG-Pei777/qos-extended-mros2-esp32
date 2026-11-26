@@ -49,7 +49,7 @@ def main():
         rows = list(csv.DictReader(handle))
 
     if not rows or not REQUIRED_COLUMNS.issubset(rows[0]):
-        raise SystemExit("FAIL: CSV does not use the top-tier ROUND4 schema")
+        raise SystemExit("FAIL: CSV does not use the ROUND4 schema")
 
     errors = []
     manifest_cache = {}

@@ -199,14 +199,14 @@ extern "C" void app_main(void)
   bool ros2_to_esp32_ok = (cached_msg_count > 0);
 
   if (esp32_to_ros2_ok && ros2_to_esp32_ok) {
-    MROS2_INFO("\n✅ BIDIRECTIONAL TEST PASSED!");
+    MROS2_INFO("\n[OK] BIDIRECTIONAL TEST PASSED!");
     MROS2_INFO("   Both directions working correctly.");
   } else {
     if (!esp32_to_ros2_ok) {
-      MROS2_ERROR("\n❌ ESP32 → ROS2 direction failed!");
+      MROS2_ERROR("\n[FAIL] ESP32 → ROS2 direction failed!");
     }
     if (!ros2_to_esp32_ok) {
-      MROS2_ERROR("\n❌ ROS2 → ESP32 direction failed!");
+      MROS2_ERROR("\n[FAIL] ROS2 → ESP32 direction failed!");
       MROS2_ERROR("   Expected cached messages from ROS2, got 0");
     }
   }
