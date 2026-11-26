@@ -69,6 +69,7 @@ scripts/validation/        flashing, preflight, WSL firewall helpers
 scripts/test/              host-side test runner
 tests/                     host unit tests (C++) and harness tests (Python)
 docs/                      protocols, runbooks, QoS status, figures
+data/paper_campaign/       measured results: per-run values, statistics, plotted series
 ```
 
 `docs/DESIGN_MAP.md` says which file implements which mechanism and which
@@ -115,9 +116,10 @@ The board sends 64-byte requests at 10 Hz to a ROS 2 echo node over Wi-Fi;
   Durability, Deadline and Liveliness lease, in both directions and both
   creation orders.
 
-Raw captures, serial logs and build trees are not in the repository; the
-protocols, audit scripts and analysis code that produced the numbers are
-(`docs/benchmark/`, `scripts/experiment/`).
+Per-run values, per-condition statistics and the plotted series are in
+`data/paper_campaign/`. Raw captures, serial logs and build trees are not in
+the repository; the protocols, audit scripts and analysis code that produced
+the numbers are (`docs/benchmark/`, `scripts/experiment/`).
 
 ## Scope
 
