@@ -15,8 +15,8 @@ The validation path checks bidirectional communication and QoS evidence.
 ## Repository Setup
 
 ```bash
-git clone https://github.com/hal-lab-u-tokyo/mROS2-QoS.git
-cd mROS2-QoS
+git clone https://github.com/WANG-Pei777/mros2-esp32-qos.git
+cd mros2-esp32-qos
 cp platform/wifi/wifi_secrets.example.h platform/wifi/wifi_secrets.h
 ```
 

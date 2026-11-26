@@ -1,4 +1,4 @@
-# qos-extended-mros2-esp32
+# mros2-esp32-qos
 
 Selectable ROS 2 QoS for mROS 2 on the ESP32-S3.
 

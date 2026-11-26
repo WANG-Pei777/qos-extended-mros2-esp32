@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
-title: "qos-extended-mros2-esp32: selectable RTPS QoS for mROS 2 on the ESP32-S3"
+title: "mros2-esp32-qos: selectable RTPS QoS for mROS 2 on the ESP32-S3"
 type: software
 authors:
   - family-names: Wang
@@ -9,5 +9,5 @@ authors:
   - family-names: Takase
     given-names: Hideki
     affiliation: "The University of Tokyo"
-repository-code: "https://github.com/WANG-Pei777/qos-extended-mros2-esp32"
+repository-code: "https://github.com/WANG-Pei777/mros2-esp32-qos"
 license: Apache-2.0
